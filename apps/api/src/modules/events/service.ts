@@ -1,5 +1,6 @@
 import { BadRequestError, NotFoundError } from '../../errors';
 import { characterRepository } from '../characters/repository';
+import { mapService } from '../map/service';
 import { storyService } from '../stories/service';
 import { eventRepository as repo } from './repository';
 import type { EventCreate, EventUpdate } from './schemas';
@@ -25,11 +26,13 @@ export const eventService = {
   async create(storyId: string, input: EventCreate) {
     await storyService.get(storyId);
     await assertCharacters(storyId, input.characterIds);
+    await mapService.assertLocation(storyId, input.location);
     return repo.create(storyId, input);
   },
   async update(id: string, input: EventUpdate) {
     const event = await get(id);
     await assertCharacters(event.storyId, input.characterIds);
+    await mapService.assertLocation(event.storyId, input.location);
     return repo.update(id, input);
   },
   async remove(id: string) {

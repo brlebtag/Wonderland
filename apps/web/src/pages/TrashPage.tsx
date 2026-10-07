@@ -5,8 +5,8 @@ import { TrashItem } from '../components/TrashItem';
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 function contents(story: TrashedStory) {
-  const { events, characters } = story._count;
-  return `${plural(events, 'evento', 'eventos')} e ${plural(characters, 'personagem', 'personagens')}`;
+  const { events, characters, ethnicities } = story._count;
+  return `${plural(events, 'evento', 'eventos')}, ${plural(characters, 'personagem', 'personagens')} e ${plural(ethnicities, 'etnia', 'etnias')}`;
 }
 
 /** Lixeira geral: histórias apagadas. Eventos e personagens ficam na lixeira de cada história. */

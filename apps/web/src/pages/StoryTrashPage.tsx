@@ -2,8 +2,10 @@ import { Link, useParams } from 'react-router';
 import {
   formatDate,
   usePurgeCharacter,
+  usePurgeEthnicity,
   usePurgeEvent,
   useRestoreCharacter,
+  useRestoreEthnicity,
   useRestoreEvent,
   useStory,
   useStoryTrash,
@@ -11,7 +13,7 @@ import {
 import { StoryHeader } from '../components/StoryHeader';
 import { TrashItem } from '../components/TrashItem';
 
-/** Lixeira de uma história: eventos e personagens apagados. */
+/** Lixeira de uma história: eventos, personagens e etnias apagados. */
 export function StoryTrashPage() {
   const { id = '' } = useParams();
   const story = useStory(id);
@@ -20,6 +22,8 @@ export function StoryTrashPage() {
   const purgeEvent = usePurgeEvent(id);
   const restoreCharacter = useRestoreCharacter(id);
   const purgeCharacter = usePurgeCharacter(id);
+  const restoreEthnicity = useRestoreEthnicity(id);
+  const purgeEthnicity = usePurgeEthnicity(id);
 
   if (story.isLoading) return <main className="container muted">Carregando…</main>;
   if (!story.data) {
@@ -33,6 +37,7 @@ export function StoryTrashPage() {
 
   const events = trash.data?.events ?? [];
   const characters = trash.data?.characters ?? [];
+  const ethnicities = trash.data?.ethnicities ?? [];
 
   return (
     <main className="container wide">
@@ -73,6 +78,22 @@ export function StoryTrashPage() {
             purgeAlso="(os eventos dele continuam na história)"
             onRestore={() => restoreCharacter.mutate(c.id)}
             onPurge={() => purgeCharacter.mutate(c.id)}
+          />
+        ))}
+      </ul>
+
+      <h2 className="trash-section">Etnias</h2>
+      {trash.data && ethnicities.length === 0 && <p className="muted">Nenhuma etnia na lixeira.</p>}
+      <ul className="story-list">
+        {ethnicities.map((e) => (
+          <TrashItem
+            key={e.id}
+            title={e.kind ? `${e.name} (${e.kind})` : e.name}
+            details="Restaurar mantém os vínculos com personagens e com o mapa; excluir deixa-os sem etnia."
+            deletedAt={e.deletedAt}
+            name={e.name}
+            onRestore={() => restoreEthnicity.mutate(e.id)}
+            onPurge={() => purgeEthnicity.mutate(e.id)}
           />
         ))}
       </ul>

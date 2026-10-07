@@ -20,13 +20,17 @@ export const storyRepository = {
     prisma.story.findMany({
       where: { deletedAt: { not: null } },
       orderBy: { deletedAt: 'desc' },
-      include: { _count: { select: { events: true, characters: true } } },
+      include: { _count: { select: { events: true, characters: true, ethnicities: true } } },
     }),
-  /** Remove de vez a história com todos os seus eventos e personagens (os vínculos caem em cascata). */
+  /**
+   * Remove de vez a história com eventos, personagens e etnias
+   * (os vínculos e o mapa caem em cascata).
+   */
   purge: (id: string) =>
     prisma.$transaction([
       prisma.event.deleteMany({ where: { storyId: id } }),
       prisma.character.deleteMany({ where: { storyId: id } }),
+      prisma.ethnicity.deleteMany({ where: { storyId: id } }),
       prisma.story.delete({ where: { id } }),
     ]),
 };

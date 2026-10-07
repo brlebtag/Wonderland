@@ -8,11 +8,20 @@ type Props = {
   highlightedIds: string[];
   /** Data dos "dias atuais" (evento mais recente da história). */
   presentDate?: string;
+  /** Nome do local do evento no mapa, se houver. */
+  locationName?: (event: StoryEvent) => string | undefined;
   onHover: (ids: string[]) => void;
   onTrash: (event: StoryEvent) => void;
 };
 
-export function EventList({ events, highlightedIds, presentDate, onHover, onTrash }: Props) {
+export function EventList({
+  events,
+  highlightedIds,
+  presentDate,
+  locationName,
+  onHover,
+  onTrash,
+}: Props) {
   const listRef = useRef<HTMLUListElement>(null);
 
   // Ao selecionar um grupo na timeline, rola a lista até o primeiro evento dele.
@@ -41,6 +50,7 @@ export function EventList({ events, highlightedIds, presentDate, onHover, onTras
               {presentDate && ` (${formatSincePresent(event.date, presentDate)})`}
             </div>
             <strong>{event.title}</strong>
+            {locationName?.(event) && <div className="event-location">📍 {locationName(event)}</div>}
             {event.description && <p className="event-desc">{event.description}</p>}
             {event.characters.length > 0 && (
               <div className="chips">

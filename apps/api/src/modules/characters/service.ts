@@ -1,4 +1,5 @@
 import { NotFoundError } from '../../errors';
+import { ethnicityService } from '../ethnicities/service';
 import { eventRepository } from '../events/repository';
 import { storyService } from '../stories/service';
 import { characterRepository as repo } from './repository';
@@ -18,10 +19,12 @@ export const characterService = {
   get,
   async create(storyId: string, input: CharacterCreate) {
     await storyService.get(storyId);
+    await ethnicityService.assertInStory(storyId, input.ethnicityId);
     return repo.create(storyId, input);
   },
   async update(id: string, input: CharacterUpdate) {
-    await get(id);
+    const character = await get(id);
+    await ethnicityService.assertInStory(character.storyId, input.ethnicityId);
     return repo.update(id, input);
   },
   // Os vínculos com eventos ficam; o personagem só deixa de aparecer neles.

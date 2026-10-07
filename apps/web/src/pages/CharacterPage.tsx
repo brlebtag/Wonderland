@@ -1,5 +1,11 @@
 import { Link, useNavigate, useParams } from 'react-router';
-import { useCharacter, useCharacterEvents, useDeleteCharacter, useEvents } from '../api';
+import {
+  useCharacter,
+  useCharacterEvents,
+  useDeleteCharacter,
+  useEthnicities,
+  useEvents,
+} from '../api';
 import { filledGroups, formatAttribute } from '../characterDisplay';
 import { EventsSection } from '../components/EventsSection';
 import { ageAt } from '../timelineLayout';
@@ -11,6 +17,7 @@ export function CharacterPage() {
   // "Dias atuais" = evento mais recente da história inteira, não só deste personagem.
   const storyEvents = useEvents(storyId);
   const deleteCharacter = useDeleteCharacter(storyId);
+  const ethnicities = useEthnicities(storyId);
   const navigate = useNavigate();
 
   if (character.isLoading) return <main className="container muted">Carregando…</main>;
@@ -27,6 +34,7 @@ export function CharacterPage() {
   const presentDate = storyEvents.data?.at(-1)?.date;
   const birthDate = c.attributes.birthDate as string | undefined;
   const groups = filledGroups(c.attributes);
+  const ethnicity = ethnicities.data?.find((e) => e.id === c.ethnicityId);
 
   return (
     <main className="container wide">
@@ -38,6 +46,13 @@ export function CharacterPage() {
             {c.name}
             {c.nickname && <span className="muted nickname"> “{c.nickname}”</span>}
           </h1>
+          {ethnicity && (
+            <p className="ethnicity-title">
+              <span className="swatch" style={{ background: ethnicity.color }} />
+              {ethnicity.name}
+              {ethnicity.kind && <span className="muted"> · {ethnicity.kind}</span>}
+            </p>
+          )}
           {birthDate && presentDate && (
             <p className="muted">Idade nos dias atuais: {ageAt(birthDate, presentDate)} anos</p>
           )}

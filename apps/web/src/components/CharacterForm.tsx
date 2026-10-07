@@ -5,13 +5,15 @@ import {
   type CharacterAttributes,
   type CharacterField,
 } from '@wonderland/shared';
-import type { CharacterInput } from '../api';
+import type { CharacterInput, Ethnicity } from '../api';
 import { ChipSelect } from './ChipSelect';
 
 type Draft = Record<string, unknown>;
 
 type Props = {
   initial?: CharacterInput;
+  /** Etnias da história para o vínculo do personagem. */
+  ethnicities: Ethnicity[];
   submitLabel: string;
   onSubmit: (input: CharacterInput) => Promise<unknown>;
   onCancel: () => void;
@@ -75,9 +77,10 @@ function FieldInput({
 const isFilled = (v: unknown) =>
   v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0);
 
-export function CharacterForm({ initial, submitLabel, onSubmit, onCancel }: Props) {
+export function CharacterForm({ initial, ethnicities, submitLabel, onSubmit, onCancel }: Props) {
   const [name, setName] = useState(initial?.name ?? '');
   const [nickname, setNickname] = useState(initial?.nickname ?? '');
+  const [ethnicityId, setEthnicityId] = useState(initial?.ethnicityId ?? '');
   const [attrs, setAttrs] = useState<Draft>(initial?.attributes ?? {});
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
@@ -89,7 +92,12 @@ export function CharacterForm({ initial, submitLabel, onSubmit, onCancel }: Prop
     setSaving(true);
     setError(undefined);
     try {
-      await onSubmit({ name, nickname, attributes: cleanAttributes(attrs) as CharacterAttributes });
+      await onSubmit({
+        name,
+        nickname,
+        ethnicityId: ethnicityId || null,
+        attributes: cleanAttributes(attrs) as CharacterAttributes,
+      });
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -107,6 +115,22 @@ export function CharacterForm({ initial, submitLabel, onSubmit, onCancel }: Prop
         <label className="grow">
           Apelido
           <input value={nickname} onChange={(e) => setNickname(e.target.value)} />
+        </label>
+        <label className="grow">
+          Etnia (nação/reino/povo)
+          <select value={ethnicityId} onChange={(e) => setEthnicityId(e.target.value)}>
+            <option value="">—</option>
+            {ethnicities.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name}
+                {e.kind && ` (${e.kind})`}
+              </option>
+            ))}
+            {/* etnia vinculada que está na lixeira: mantém a opção para não perder o vínculo */}
+            {ethnicityId && !ethnicities.some((e) => e.id === ethnicityId) && (
+              <option value={ethnicityId}>(etnia na lixeira)</option>
+            )}
+          </select>
         </label>
       </div>
 

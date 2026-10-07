@@ -1,3 +1,4 @@
+import type { EventLocation } from '@wonderland/shared';
 import { prisma } from '../../db';
 import type { EventCreate, EventUpdate } from './schemas';
 
@@ -17,6 +18,12 @@ const include = {
 
 const orderBy = [{ date: 'asc' as const }, { createdAt: 'asc' as const }];
 const toConnect = (ids: string[]) => ids.map((id) => ({ id }));
+
+/** { kind, id } da API ↔ colunas locationKind/locationId. */
+const locationColumns = (location: EventLocation | null | undefined) =>
+  location === undefined
+    ? {}
+    : { locationKind: location?.kind ?? null, locationId: location?.id ?? null };
 
 /**
  * O formulário só conhece personagens vivos; ao substituir os vínculos, mantém os de personagens
@@ -40,16 +47,22 @@ export const eventRepository = {
       orderBy,
     }),
   findById: (id: string) => prisma.event.findFirst({ where: { id, ...alive }, include }),
-  create: (storyId: string, { characterIds, ...data }: EventCreate) =>
+  create: (storyId: string, { characterIds, location, ...data }: EventCreate) =>
     prisma.event.create({
-      data: { ...data, storyId, characters: { connect: toConnect(characterIds) } },
+      data: {
+        ...data,
+        ...locationColumns(location),
+        storyId,
+        characters: { connect: toConnect(characterIds) },
+      },
       include,
     }),
-  update: async (id: string, { characterIds, ...data }: EventUpdate) =>
+  update: async (id: string, { characterIds, location, ...data }: EventUpdate) =>
     prisma.event.update({
       where: { id },
       data: {
         ...data,
+        ...locationColumns(location),
         characters: characterIds && {
           set: toConnect(await withTrashedCharacters(id, characterIds)),
         },

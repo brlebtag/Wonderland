@@ -8,45 +8,79 @@ datasource db {
 }
 
 model Story {
-  id          String    @id @default(cuid())
+  id          String      @id @default(cuid())
   title       String
-  description String    @default("")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  description String      @default("")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   deletedAt   DateTime?
   events      Event[]
   characters  Character[]
+  ethnicities Ethnicity[]
+  map         StoryMap?
 
   @@index([deletedAt])
 }
 
+/// Etnia: nação, reino, povo, tribo...
+model Ethnicity {
+  id          String      @id @default(cuid())
+  storyId     String
+  story       Story       @relation(fields: [storyId], references: [id])
+  name        String
+  kind        String      @default("")
+  color       String      @default("#8a6ad8")
+  description String      @default("")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+  characters  Character[]
+
+  @@index([storyId])
+}
+
 model Character {
-  id         String    @id @default(cuid())
-  storyId    String
-  story      Story     @relation(fields: [storyId], references: [id])
-  name       String
-  nickname   String    @default("")
+  id          String     @id @default(cuid())
+  storyId     String
+  story       Story      @relation(fields: [storyId], references: [id])
+  name        String
+  nickname    String     @default("")
   // Ficha completa; os campos válidos estão em packages/shared/src/characterFields.ts.
-  attributes Json
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
-  events     Event[]
+  attributes  Json
+  ethnicityId String?
+  ethnicity   Ethnicity? @relation(fields: [ethnicityId], references: [id], onDelete: SetNull)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+  events      Event[]
 
   @@index([storyId])
 }
 
 model Event {
-  id          String    @id @default(cuid())
-  storyId     String
-  story       Story     @relation(fields: [storyId], references: [id])
-  title       String
-  description String    @default("")
-  date        DateTime
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-  characters  Character[]
+  id           String      @id @default(cuid())
+  storyId      String
+  story        Story       @relation(fields: [storyId], references: [id])
+  title        String
+  description  String      @default("")
+  date         DateTime
+  // Lugar no mapa da história (marcador, região ou território); ids vivem no JSON do mapa.
+  locationKind String?
+  locationId   String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  deletedAt    DateTime?
+  characters   Character[]
 
   @@index([storyId, date])
+}
+
+/// Mapa da história; o formato do JSON está em packages/shared/src/map.ts.
+model StoryMap {
+  id        String   @id @default(cuid())
+  storyId   String   @unique
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

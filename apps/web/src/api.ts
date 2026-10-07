@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CharacterAttributes } from '@wonderland/shared';
+import type { CharacterAttributes, EventLocation, LocationKind, MapData } from '@wonderland/shared';
 
 export type Story = {
   id: string;
@@ -18,6 +18,8 @@ export type StoryEvent = {
   description: string;
   date: string; // ISO, meia-noite UTC
   characters: CharacterRef[];
+  locationKind: LocationKind | null;
+  locationId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -28,6 +30,18 @@ export type Character = {
   name: string;
   nickname: string;
   attributes: CharacterAttributes;
+  ethnicityId: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Ethnicity = {
+  id: string;
+  storyId: string;
+  name: string;
+  kind: string;
+  color: string;
+  description: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -38,8 +52,16 @@ export type EventInput = {
   description: string;
   date: string; // YYYY-MM-DD
   characterIds: string[];
+  location: EventLocation | null;
 };
-export type CharacterInput = { name: string; nickname: string; attributes: CharacterAttributes };
+export type CharacterInput = {
+  name: string;
+  nickname: string;
+  attributes: CharacterAttributes;
+  ethnicityId: string | null;
+};
+export type EthnicityInput = { name: string; kind: string; color: string; description: string };
+export type StoryMapResponse = { data: MapData | null; updatedAt: string | null };
 
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -62,6 +84,9 @@ const keys = {
   character: (id: string) => ['characters', id] as const,
   characterEvents: (id: string) => ['characters', id, 'events'] as const,
   storyTrash: (storyId: string) => ['stories', storyId, 'trash'] as const,
+  ethnicities: (storyId: string) => ['stories', storyId, 'ethnicities'] as const,
+  ethnicity: (id: string) => ['ethnicities', id] as const,
+  map: (storyId: string) => ['stories', storyId, 'map'] as const,
   trash: ['trash'] as const,
 };
 
@@ -210,10 +235,12 @@ export function useDeleteCharacter(storyId: string) {
 // ---------- lixeira ----------
 
 type Trashed = { deletedAt: string };
-export type TrashedStory = Story & Trashed & { _count: { events: number; characters: number } };
+export type TrashedStory = Story &
+  Trashed & { _count: { events: number; characters: number; ethnicities: number } };
 export type StoryTrash = {
   events: (StoryEvent & Trashed)[];
   characters: (Character & Trashed)[];
+  ethnicities: (Ethnicity & Trashed)[];
 };
 
 export const useTrashedStories = () =>
@@ -258,6 +285,73 @@ export const useRestoreCharacter = (storyId: string) =>
   useItemTrashMutation(storyId, (id) => request(`/characters/${id}/restore`, 'POST'));
 export const usePurgeCharacter = (storyId: string) =>
   useItemTrashMutation(storyId, (id) => request(`/characters/${id}/permanent`, 'DELETE'));
+export const useRestoreEthnicity = (storyId: string) =>
+  useItemTrashMutation(storyId, (id) => request(`/ethnicities/${id}/restore`, 'POST'));
+export const usePurgeEthnicity = (storyId: string) =>
+  useItemTrashMutation(storyId, (id) => request(`/ethnicities/${id}/permanent`, 'DELETE'));
+
+// ---------- etnias ----------
+
+export const useEthnicities = (storyId: string) =>
+  useQuery({
+    queryKey: keys.ethnicities(storyId),
+    queryFn: () => request<Ethnicity[]>(`/stories/${storyId}/ethnicities`),
+  });
+
+export const useEthnicity = (id: string | undefined) =>
+  useQuery({
+    queryKey: keys.ethnicity(id ?? ''),
+    queryFn: () => request<Ethnicity>(`/ethnicities/${id}`),
+    enabled: !!id,
+    retry: false,
+  });
+
+/** Etnias aparecem em personagens e no mapa: recarrega tudo da história. */
+function useEthnicityMutation<T>(storyId: string, action: (input: T) => Promise<unknown>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: action,
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: keys.story(storyId) }),
+        qc.invalidateQueries({ queryKey: ['ethnicities'] }),
+        qc.invalidateQueries({ queryKey: keys.allCharacters }),
+      ]),
+  });
+}
+
+export const useCreateEthnicity = (storyId: string) =>
+  useEthnicityMutation(storyId, (input: EthnicityInput) =>
+    request<Ethnicity>(`/stories/${storyId}/ethnicities`, 'POST', input),
+  );
+export const useUpdateEthnicity = (storyId: string, id: string) =>
+  useEthnicityMutation(storyId, (input: EthnicityInput) =>
+    request<Ethnicity>(`/ethnicities/${id}`, 'PATCH', input),
+  );
+export const useDeleteEthnicity = (storyId: string) =>
+  useEthnicityMutation(storyId, (id: string) => request(`/ethnicities/${id}`, 'DELETE'));
+
+// ---------- mapa ----------
+
+export const useMap = (storyId: string) =>
+  useQuery({
+    queryKey: keys.map(storyId),
+    queryFn: () => request<StoryMapResponse>(`/stories/${storyId}/map`),
+  });
+
+/** Salvar o mapa pode tirar o local de eventos: recarrega tudo da história. */
+export function useSaveMap(storyId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: MapData) =>
+      request<StoryMapResponse & { clearedEvents: number }>(`/stories/${storyId}/map`, 'PUT', { data }),
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: keys.story(storyId) }),
+        qc.invalidateQueries({ queryKey: keys.allCharacters }),
+      ]),
+  });
+}
 
 // ---------- datas ----------
 

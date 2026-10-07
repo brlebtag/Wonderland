@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useDeleteEvent, type StoryEvent } from '../api';
+import { useMapLocations } from '../mapLocations';
 import { useStoredState } from '../storage';
 import type { Orientation } from '../timelineLayout';
 import { EventList } from './EventList';
@@ -22,6 +23,8 @@ type Props = {
 export function EventsSection({ storyId, events, presentDate, newEventHref, title = 'Eventos' }: Props) {
   const navigate = useNavigate();
   const deleteEvent = useDeleteEvent(storyId);
+  const map = useMapLocations(storyId);
+  const locationName = (e: StoryEvent) => map.of(e)?.name;
   const [orientation, setOrientation] = useStoredState<Orientation>(
     'wonderland.timelineOrientation',
     'vertical',
@@ -52,6 +55,7 @@ export function EventsSection({ storyId, events, presentDate, newEventHref, titl
           orientation={orientation}
           highlightedIds={highlightedIds}
           presentDate={presentDate}
+          locationName={locationName}
           onOpenEvent={(e) => navigate(`/stories/${storyId}/events/${e.id}/edit`)}
           onSelectCluster={(evs) => setHighlightedIds(evs.map((e) => e.id))}
         />
@@ -59,6 +63,7 @@ export function EventsSection({ storyId, events, presentDate, newEventHref, titl
           events={events}
           highlightedIds={highlightedIds}
           presentDate={presentDate}
+          locationName={locationName}
           onHover={setHighlightedIds}
           onTrash={(e) => {
             if (confirm(`Mover o evento "${e.title}" para a lixeira?`)) deleteEvent.mutate(e.id);

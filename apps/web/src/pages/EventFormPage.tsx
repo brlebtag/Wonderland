@@ -10,6 +10,7 @@ import {
   useUpdateEvent,
 } from '../api';
 import { EventForm } from '../components/EventForm';
+import { useMapLocations } from '../mapLocations';
 import { useGoBack } from '../navigation';
 
 /** Cria (/stories/:id/events/new) ou edita (/stories/:id/events/:eventId/edit) um evento. */
@@ -23,13 +24,14 @@ export function EventFormPage() {
   const events = useEvents(storyId);
   const characters = useCharacters(storyId);
   const createCharacter = useCreateCharacter(storyId);
+  const map = useMapLocations(storyId);
   const event = events.data?.find((e) => e.id === eventId);
   const createEvent = useCreateEvent(storyId);
   const updateEvent = useUpdateEvent(storyId);
   const deleteEvent = useDeleteEvent(storyId);
   const goBack = useGoBack(`/stories/${storyId}`);
 
-  if (story.isLoading || events.isLoading || characters.isLoading) return <main className="container muted">Carregando…</main>;
+  if (story.isLoading || events.isLoading || characters.isLoading || map.isLoading) return <main className="container muted">Carregando…</main>;
   if (!story.data || (!isNew && !event)) {
     return (
       <main className="container">
@@ -52,12 +54,18 @@ export function EventFormPage() {
                   description: event.description,
                   date: toInputDate(event.date),
                   characterIds: event.characters.map((c) => c.id),
+                  location:
+                    event.locationKind && event.locationId
+                      ? { kind: event.locationKind, id: event.locationId }
+                      : null,
                 }
               : { characterIds: presetCharacterId ? [presetCharacterId] : [] }
           }
           characters={characters.data ?? []}
+          locations={map.locations}
+          mapHref={`/stories/${storyId}/map/edit`}
           onCreateCharacter={(name) =>
-            createCharacter.mutateAsync({ name, nickname: '', attributes: {} })
+            createCharacter.mutateAsync({ name, nickname: '', attributes: {}, ethnicityId: null })
           }
           submitLabel={isNew ? 'Adicionar' : 'Salvar'}
           onSubmit={async (input) => {

@@ -16,17 +16,24 @@ const characterIds = z
   .max(500)
   .transform((ids) => [...new Set(ids)]);
 
+// Lugar no mapa da história (null = sem local).
+const location = z
+  .object({ kind: z.enum(['feature', 'region', 'territory']), id: z.string().min(1).max(64) })
+  .nullable();
+
 export const eventCreate = z.object({
   title,
   description: description.default(''),
   date,
   characterIds: characterIds.default([]),
+  location: location.default(null),
 });
 export const eventUpdate = z.object({
   title: title.optional(),
   description: description.optional(),
   date: date.optional(),
   characterIds: characterIds.optional(),
+  location: location.optional(),
 });
 
 export type EventCreate = z.infer<typeof eventCreate>;

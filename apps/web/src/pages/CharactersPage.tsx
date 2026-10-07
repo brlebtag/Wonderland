@@ -1,18 +1,27 @@
 import { Link, useParams } from 'react-router';
 import { characterFields } from '@wonderland/shared';
-import { useCharacters, useDeleteCharacter, useStory, type Character } from '../api';
+import {
+  useCharacters,
+  useDeleteCharacter,
+  useEthnicities,
+  useStory,
+  type Character,
+  type Ethnicity,
+} from '../api';
 import { formatAttribute } from '../characterDisplay';
 import { StoryHeader } from '../components/StoryHeader';
 
 const SUMMARY_KEYS = ['sex', 'age', 'birthPlace'];
 
-/** Linha curta com alguns dados da ficha (ex.: "Feminino · 7 anos · Oxford"). */
-function summary(character: Character) {
-  return SUMMARY_KEYS.flatMap((key) => {
+/** Linha curta com etnia e alguns dados da ficha (ex.: "Reino de Copas · Feminino · 7 anos"). */
+function summary(character: Character, ethnicities: Ethnicity[]) {
+  const ethnicity = ethnicities.find((e) => e.id === character.ethnicityId)?.name;
+  const fields = SUMMARY_KEYS.flatMap((key) => {
     const field = characterFields.find((f) => f.key === key)!;
     const value = character.attributes[key];
     return value === undefined ? [] : [formatAttribute(field, value)];
-  }).join(' · ');
+  });
+  return [ethnicity, ...fields].filter(Boolean).join(' · ');
 }
 
 export function CharactersPage() {
@@ -20,6 +29,7 @@ export function CharactersPage() {
   const story = useStory(id);
   const characters = useCharacters(id);
   const deleteCharacter = useDeleteCharacter(id);
+  const ethnicities = useEthnicities(id);
 
   if (story.isLoading) return <main className="container muted">Carregando…</main>;
   if (!story.data) {
@@ -52,7 +62,9 @@ export function CharactersPage() {
                 {c.name}
               </Link>
               {c.nickname && <span className="muted"> “{c.nickname}”</span>}
-              {summary(c) && <div className="muted">{summary(c)}</div>}
+              {summary(c, ethnicities.data ?? []) && (
+                <div className="muted">{summary(c, ethnicities.data ?? [])}</div>
+              )}
             </div>
             <div className="actions">
               <Link className="button ghost" to={`/stories/${id}/characters/${c.id}/edit`}>

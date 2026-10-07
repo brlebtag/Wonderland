@@ -20,10 +20,26 @@ consistência da narrativa.
   - Personagens podem ser criados direto do formulário de evento, só com o nome.
   - Com data de nascimento preenchida, mostra a idade nos "dias atuais" da história.
 
-- **Lixeira** — nada é apagado de imediato: histórias, eventos e personagens vão para a lixeira.
+- **Etnias** — nações, reinos, povos, tribos... com tipo, cor e descrição. Cada personagem pode ser
+  vinculado a uma etnia; no mapa, regiões e territórios também.
+- **Mapa da história** — editor no estilo "paint":
+  - pinte **terra, mar e lagos** com pincel e divida a terra em **regiões** (pintadas por cima);
+  - marque **cidades, vilarejos, castelos, portos, templos, ruínas, vulcões, montanhas, florestas,
+    cavernas**, locais genéricos e rótulos de texto (nomes de mares, continentes...);
+  - desenhe **rios e estradas**;
+  - delimite **territórios** de uma etnia com linha tracejada (círculo/"raio" ou polígono), que podem
+    atravessar várias regiões — ex.: uma tribo que transita entre dois países;
+  - selecionar e arrastar, desfazer (Ctrl+Z), apagar (Delete), zoom e salvar.
+- **Local dos eventos** — cada evento pode apontar para um marcador, uma região ou um território do
+  mapa ("evento X, no ano Y, com W, K e Z, em P").
+- **Mapa no tempo** — régua do primeiro ao último evento (com play, velocidade e saltos de evento em
+  evento): os personagens aparecem no local do seu primeiro evento e se deslocam em linha reta entre
+  os locais dos eventos seguintes, proporcional ao tempo; com trilhas do caminho percorrido.
+
+- **Lixeira** — nada é apagado de imediato: histórias, eventos, personagens e etnias vão para a lixeira.
   - **Lixeira geral** (`/trash`, botão na lista de histórias): histórias apagadas, com quantos
     eventos e personagens cada uma contém.
-  - **Lixeira da história** (aba ao lado de Eventos e Personagens): eventos e personagens apagados.
+  - **Lixeira da história** (aba da história): eventos, personagens e etnias apagados.
   - Cada item pode ser **restaurado** ou **excluído permanentemente** (com confirmação; só vale para
     o que já está na lixeira). Excluir uma história remove junto seus eventos e personagens; excluir
     um personagem mantém os eventos dele. Restaurar um personagem devolve os vínculos com os eventos.
@@ -91,16 +107,22 @@ Wonderland/
 │   │   │   └── modules/
 │   │   │       ├── stories/     routes → service → repository
 │   │   │       ├── events/
-│   │   │       └── characters/
+│   │   │       ├── characters/
+│   │   │       ├── ethnicities/
+│   │   │       ├── map/         documento do mapa + validação
+│   │   │       └── trash/
 │   │   └── test/                testes de API (banco próprio: prisma/test.db)
 │   └── web/                     frontend
 │       └── src/
 │           ├── api.ts           cliente HTTP + hooks do TanStack Query
 │           ├── pages/           uma tela por rota
 │           ├── components/      Timeline, EventList, CharacterForm, CharacterPicker…
+│           ├── map/             MapView (canvas + SVG), desenho da grade, documento editável
 │           └── timelineLayout.ts  cálculo das posições da timeline (com testes)
 ├── packages/shared/             código usado pelos dois lados
-│   └── src/characterFields.ts   catálogo da ficha de personagem
+│   └── src/
+│       ├── characterFields.ts   catálogo da ficha de personagem
+│       └── map.ts               formato do mapa, RLE, locais e deslocamento no tempo
 └── scripts/setup.mjs
 ```
 
@@ -118,13 +140,32 @@ apagados. Uma história na lixeira esconde seus eventos e personagens; ao restau
 ### Modelo de dados
 
 ```
-Story 1───* Event *───* Character *───1 Story
+Story 1───* Event *───* Character *───0..1 Ethnicity
+  │            │
+  │            └── location → { kind, id } de um elemento do mapa
+  └── 1───0..1 StoryMap (JSON)
 ```
 
 - `Story`: `title`, `description`
-- `Event`: `title`, `description`, `date` (ordenação da timeline)
-- `Character`: `name`, `nickname`, `attributes` (JSON com a ficha)
-- Todos: `createdAt`, `updatedAt`, `deletedAt`
+- `Event`: `title`, `description`, `date` (ordenação da timeline), `locationKind` + `locationId`
+- `Character`: `name`, `nickname`, `attributes` (JSON com a ficha), `ethnicityId`
+- `Ethnicity`: `name`, `kind`, `color`, `description`
+- `StoryMap`: `data` (JSON, um documento por história)
+- Todos (menos o mapa): `createdAt`, `updatedAt`, `deletedAt`
+
+### Mapa
+
+O mapa é **um documento JSON por história** (formato em
+[`packages/shared/src/map.ts`](packages/shared/src/map.ts)), salvo de uma vez pelo editor:
+
+- **Grade pintada**: `terrain` (mar/terra/lago por célula) e `regionGrid` (região de cada célula),
+  guardadas em RLE (`valor*quantidade,...`). Tamanho escolhido ao criar (160×100, 240×150 ou 360×225).
+- **Elementos vetoriais** em coordenadas de célula: `features` (marcadores), `paths` (rios e
+  estradas), `territories` (círculo ou polígono, com etnia) e `regions` (nome, cor, etnia).
+
+Um evento referencia um marcador, uma região ou um território pelo id. Ao salvar o mapa, eventos que
+apontavam para um elemento removido **ficam sem local** (a API informa quantos). Para posicionar uma
+região usa-se a célula dela mais próxima do seu centro; um território usa o centro do círculo/polígono.
 
 ### Ficha de personagem
 
@@ -159,7 +200,7 @@ Erros de validação respondem `400`; registros inexistentes ou na lixeira, `404
 | DELETE | `/stories/:id` | Lixeira (soft delete) |
 | POST | `/stories/:id/restore` | Restaura da lixeira |
 | GET | `/stories/:id/events` | Eventos ordenados por data, com `characters: [{ id, name }]` |
-| POST | `/stories/:id/events` | Cria `{ title, date, description?, characterIds? }` |
+| POST | `/stories/:id/events` | Cria `{ title, date, description?, characterIds?, location? }`; `location` = `{ kind, id }` com kind `feature`, `region` ou `territory` |
 | PATCH | `/events/:id` | Atualiza (`characterIds` substitui os vínculos) |
 | DELETE | `/events/:id` | Lixeira |
 | GET | `/stories/:id/characters` | Personagens da história |
@@ -168,11 +209,16 @@ Erros de validação respondem `400`; registros inexistentes ou na lixeira, `404
 | PATCH | `/characters/:id` | Atualiza (`attributes` substitui a ficha inteira) |
 | DELETE | `/characters/:id` | Lixeira (some dos eventos; o vínculo é mantido) |
 | GET | `/characters/:id/events` | Eventos do personagem |
+| GET | `/stories/:id/ethnicities` | Etnias da história |
+| POST | `/stories/:id/ethnicities` | Cria `{ name, kind?, color?, description? }` |
+| GET · PATCH · DELETE | `/ethnicities/:id` | Detalhe, atualiza, lixeira |
+| GET | `/stories/:id/map` | Mapa da história (`data: null` se ainda não existe) |
+| PUT | `/stories/:id/map` | Salva `{ data }`; responde `clearedEvents` (eventos que ficaram sem local) |
 | GET | `/trash/stories` | Histórias na lixeira (com `_count` de eventos e personagens) |
 | GET | `/stories/:id/trash` | Eventos e personagens na lixeira da história |
-| POST | `/events/:id/restore` · `/characters/:id/restore` | Restaura da lixeira |
+| POST | `/events/:id/restore` · `/characters/:id/restore` · `/ethnicities/:id/restore` | Restaura da lixeira |
 | DELETE | `/stories/:id/permanent` | Exclui de vez a história (já na lixeira) com eventos e personagens |
-| DELETE | `/events/:id/permanent` · `/characters/:id/permanent` | Exclui de vez (só itens na lixeira) |
+| DELETE | `/events/:id/permanent` · `/characters/:id/permanent` · `/ethnicities/:id/permanent` | Exclui de vez (só itens na lixeira) |
 
 ## Migrando para Postgres
 

@@ -33,6 +33,8 @@ type Props = {
   highlightedIds: string[];
   /** Data dos "dias atuais" (evento mais recente da história). */
   presentDate?: string;
+  /** Nome do local do evento no mapa, se houver. */
+  locationName?: (event: StoryEvent) => string | undefined;
   onOpenEvent: (event: StoryEvent) => void;
   onSelectCluster: (events: StoryEvent[]) => void;
 };
@@ -44,6 +46,7 @@ export function Timeline({
   orientation,
   highlightedIds,
   presentDate,
+  locationName,
   onOpenEvent,
   onSelectCluster,
 }: Props) {
@@ -172,6 +175,7 @@ export function Timeline({
                 {presentDate && ` (${formatSincePresent(e.date, presentDate)})`}
               </div>
               <strong>{e.title}</strong>
+              {locationName?.(e) && <div className="event-location">📍 {locationName(e)}</div>}
               {e.description && <p>{e.description}</p>}
             </div>
           ))}

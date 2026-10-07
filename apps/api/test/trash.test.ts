@@ -36,7 +36,7 @@ describe('lixeira de histórias', () => {
 
     const trash = (await get('/api/trash/stories')).json();
     const item = trash.find((s: WithId) => s.id === story.id);
-    expect(item._count).toEqual({ events: 1, characters: 1 });
+    expect(item._count).toEqual({ events: 1, characters: 1, ethnicities: 0 });
     expect(item.deletedAt).not.toBeNull();
 
     await post(`/api/stories/${story.id}/restore`);

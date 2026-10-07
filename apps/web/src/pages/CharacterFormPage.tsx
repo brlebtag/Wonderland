@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router';
-import { useCharacter, useCreateCharacter, useUpdateCharacter } from '../api';
+import { useCharacter, useCreateCharacter, useEthnicities, useUpdateCharacter } from '../api';
 import { CharacterForm } from '../components/CharacterForm';
 import { useGoBack } from '../navigation';
 
@@ -8,6 +8,7 @@ export function CharacterFormPage() {
   const { id: storyId = '', characterId } = useParams();
   const isNew = !characterId;
   const character = useCharacter(characterId);
+  const ethnicities = useEthnicities(storyId);
   const createCharacter = useCreateCharacter(storyId);
   const updateCharacter = useUpdateCharacter(storyId, characterId ?? '');
   const navigate = useNavigate();
@@ -33,7 +34,15 @@ export function CharacterFormPage() {
       <h1>{isNew ? 'Novo personagem' : `Editar ${c!.name}`}</h1>
       <section className="card">
         <CharacterForm
-          initial={c && { name: c.name, nickname: c.nickname, attributes: c.attributes }}
+          initial={
+            c && {
+              name: c.name,
+              nickname: c.nickname,
+              attributes: c.attributes,
+              ethnicityId: c.ethnicityId,
+            }
+          }
+          ethnicities={ethnicities.data ?? []}
           submitLabel={isNew ? 'Criar' : 'Salvar'}
           onSubmit={async (input) => {
             if (isNew) {

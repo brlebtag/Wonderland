@@ -36,15 +36,19 @@ export const attributesSchema = z
 const name = z.string().trim().min(1).max(200);
 const nickname = z.string().trim().max(200);
 
+const ethnicityId = z.string().min(1).nullable();
+
 export const characterCreate = z.object({
   name,
   nickname: nickname.default(''),
   attributes: attributesSchema.default({}),
+  ethnicityId: ethnicityId.default(null),
 });
 export const characterUpdate = z.object({
   name: name.optional(),
   nickname: nickname.optional(),
   attributes: attributesSchema.optional(),
+  ethnicityId: ethnicityId.optional(),
 });
 
 export type CharacterCreate = z.infer<typeof characterCreate>;
