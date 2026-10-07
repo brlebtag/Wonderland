@@ -154,6 +154,11 @@ function MapEditor({
   const [terrainCode, setTerrainCode] = useState<number>(LAND);
   const [brush, setBrush] = useState(6);
   const [regionCode, setRegionCode] = useState(0); // 0 = borracha de região
+  // Ligado: o pincel de região só preenche terra sem região (ou da própria região),
+  // então pintar uma região vizinha forma a fronteira em vez de "comer" a outra.
+  const [protectRegions, setProtectRegions] = useStoredState('wonderland.protectRegions', true, (raw) =>
+    raw === 'true' ? true : raw === 'false' ? false : undefined,
+  );
   const [featureType, setFeatureType] = useState<FeatureType>('city');
   const [pathType, setPathType] = useState<PathType>('river');
   const [zoomPref, setZoomPref] = useStoredState<ZoomPref>('wonderland.mapZoomPref', 'fit', parseZoom);
@@ -224,6 +229,9 @@ function MapEditor({
           d.terrain[i] = terrainCode;
           if (terrainCode !== LAND) d.regionGrid[i] = 0; // região só existe sobre a terra
         } else if (d.terrain[i] === LAND) {
+          const other = d.regionGrid[i] !== 0 && d.regionGrid[i] !== regionCode;
+          // a borracha (código 0) sempre apaga; as regiões respeitam as vizinhas se protegido
+          if (other && regionCode !== 0 && protectRegions) continue;
           d.regionGrid[i] = regionCode;
         }
       }
@@ -593,9 +601,24 @@ function MapEditor({
                 </div>
               )}
               {tool === 'region' && (
-                <p className="muted">
-                  Pintando: <strong>{doc.regions.find((r) => r.code === regionCode)?.name ?? 'borracha (sem região)'}</strong>
-                </p>
+                <>
+                  <p className="muted">
+                    Pintando: <strong>{doc.regions.find((r) => r.code === regionCode)?.name ?? 'borracha (sem região)'}</strong>
+                  </p>
+                  <label className="inline check">
+                    <input
+                      type="checkbox"
+                      checked={protectRegions}
+                      onChange={(e) => setProtectRegions(e.target.checked)}
+                    />
+                    Não pintar por cima de outras regiões
+                  </label>
+                  <p className="muted small">
+                    {protectRegions
+                      ? 'Só preenche terra sem região: a fronteira se forma onde as regiões se encontram.'
+                      : 'Pinta por cima: use para mover a fronteira entre duas regiões.'}
+                  </p>
+                </>
               )}
             </section>
           )}
