@@ -14,11 +14,15 @@ import {
 import { useEthnicities, useMap, useSaveMap, useStory, type Ethnicity } from '../api';
 import { cloneMap, fromData, newId, REGION_PALETTE, toData, type EditableMap } from '../map/mapDoc';
 import { MapView, type MapSelection, type RegionColorMode } from '../map/MapView';
+import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
+import { useMapNavigation } from '../map/useMapNavigation';
+import { ZoomSelect } from '../map/ZoomSelect';
 import { useStoredState } from '../storage';
 
-type Tool = 'select' | 'terrain' | 'region' | 'feature' | 'path' | 'circle' | 'polygon';
+type Tool = 'pan' | 'select' | 'terrain' | 'region' | 'feature' | 'path' | 'circle' | 'polygon';
 
 const TOOLS: { value: Tool; label: string; hint: string }[] = [
+  { value: 'pan', label: '✋ Mover', hint: 'Arraste para mover o mapa. Em qualquer ferramenta: Espaço + arrastar ou botão do meio.' },
   { value: 'select', label: '🖱️ Selecionar', hint: 'Clique num elemento para editar; arraste marcadores para mover.' },
   { value: 'terrain', label: '🖌️ Terreno', hint: 'Pinte terra, mar e lagos.' },
   { value: 'region', label: '🗺️ Regiões', hint: 'Pinte regiões sobre a terra (a borracha tira a região).' },
@@ -34,8 +38,6 @@ const SIZE_PRESETS = [
   { label: 'Grande (360 × 225)', width: 360, height: 225 },
 ];
 
-export const ZOOMS = [0.5, 0.75, 1, 1.5, 2, 3, 4];
-export const parseZoom = (raw: string) => (ZOOMS.includes(Number(raw)) ? Number(raw) : undefined);
 
 export function MapEditorPage() {
   const { id: storyId = '' } = useParams();
@@ -154,7 +156,18 @@ function MapEditor({
   const [regionCode, setRegionCode] = useState(0); // 0 = borracha de região
   const [featureType, setFeatureType] = useState<FeatureType>('city');
   const [pathType, setPathType] = useState<PathType>('river');
-  const [zoom, setZoom] = useStoredState('wonderland.mapZoom', 1, parseZoom);
+  const [zoomPref, setZoomPref] = useStoredState<ZoomPref>('wonderland.mapZoomPref', 'fit', parseZoom);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const fitZoom = useFitZoom(scrollRef, doc.width, doc.height);
+  const zoom = zoomPref === 'fit' ? fitZoom : zoomPref;
+  // Espaço segurado = arrastar o mapa com qualquer ferramenta
+  const [spaceDown, setSpaceDown] = useState(false);
+  const { panning, containerProps } = useMapNavigation({
+    scrollRef,
+    zoom,
+    setZoom: setZoomPref,
+    shouldPan: (e) => e.button === 1 || (e.button === 0 && (spaceDown || tool === 'pan')),
+  });
   const [colorMode, setColorMode] = useState<RegionColorMode>('region');
 
   const [selected, setSelected] = useState<MapSelection | null>(null);
@@ -354,7 +367,12 @@ function MapEditor({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const typing = (e.target as HTMLElement).closest('input, textarea, select');
+      const typing = e.target instanceof Element && e.target.closest('input, textarea, select');
+      if (e.key === ' ' && !typing) {
+        e.preventDefault(); // não rolar a página
+        if (!e.repeat) setSpaceDown(true);
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !typing) {
         e.preventDefault();
         undo();
@@ -368,8 +386,19 @@ function MapEditor({
         deleteSelected();
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === ' ') setSpaceDown(false);
+    };
+    // trocar de janela com o Espaço apertado não pode deixar o "arrastar" preso
+    const onBlur = () => setSpaceDown(false);
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+    };
   });
 
   // aviso ao fechar a aba com alterações não salvas
@@ -459,7 +488,16 @@ function MapEditor({
   };
 
   const brushTool = tool === 'terrain' || tool === 'region';
-  const cursor = tool === 'select' ? 'default' : brushTool ? 'none' : 'crosshair';
+  const cursor =
+    spaceDown || tool === 'pan'
+      ? panning
+        ? 'grabbing'
+        : 'grab'
+      : tool === 'select'
+        ? 'default'
+        : brushTool
+          ? 'none'
+          : 'crosshair';
 
   return (
     <main className="map-editor-page">
@@ -494,21 +532,15 @@ function MapEditor({
           </button>
         ))}
         <span className="toolbar-spacer" />
-        <label className="inline">
-          Zoom
-          <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>
-            {ZOOMS.map((z) => (
-              <option key={z} value={z}>
-                {z * 100}%
-              </option>
-            ))}
-          </select>
-        </label>
+        <ZoomSelect value={zoomPref} onChange={setZoomPref} />
       </div>
-      <p className="muted tool-hint">{TOOLS.find((t) => t.value === tool)!.hint}</p>
+      <p className="muted tool-hint">
+        {TOOLS.find((t) => t.value === tool)!.hint}
+        <span className="nav-hint"> · Roda do mouse: zoom · Espaço + arrastar ou botão do meio: mover</span>
+      </p>
 
       <div className="map-editor">
-        <div className="map-scroll">
+        <div className="map-scroll" ref={scrollRef} {...containerProps}>
           <MapView
             map={doc}
             gridVersion={gridVersion}
@@ -528,7 +560,7 @@ function MapEditor({
             }}
           >
             {/* pré-visualizações do editor */}
-            {brushTool && hover && <circle className="brush-preview" cx={hover[0]} cy={hover[1]} r={Math.max(0.5, brush / 2)} />}
+            {brushTool && hover && !spaceDown && <circle className="brush-preview" cx={hover[0]} cy={hover[1]} r={Math.max(0.5, brush / 2)} />}
             {draft.length > 0 && (
               <polyline
                 className={`draft ${tool}`}

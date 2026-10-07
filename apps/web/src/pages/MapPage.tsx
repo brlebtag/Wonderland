@@ -16,7 +16,9 @@ import { StoryHeader } from '../components/StoryHeader';
 import { CHARACTER_PALETTE, fromData } from '../map/mapDoc';
 import { MapView, type RegionColorMode } from '../map/MapView';
 import { useStoredState } from '../storage';
-import { parseZoom, ZOOMS } from './MapEditorPage';
+import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
+import { useMapNavigation } from '../map/useMapNavigation';
+import { ZoomSelect } from '../map/ZoomSelect';
 
 const DAY_MS = 86_400_000;
 const toDay = (iso: string) => Date.parse(iso) / DAY_MS;
@@ -91,7 +93,17 @@ function MapTimeline({
 }) {
   const doc = useMemo(() => fromData(data), [data]);
   const locations = useMemo(() => new Map(listLocations(data).map((l) => [l.id, l])), [data]);
-  const [zoom, setZoom] = useStoredState('wonderland.mapZoom', 1, parseZoom);
+  const [zoomPref, setZoomPref] = useStoredState<ZoomPref>('wonderland.mapZoomPref', 'fit', parseZoom);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const fitZoom = useFitZoom(scrollRef, doc.width, doc.height);
+  const zoom = zoomPref === 'fit' ? fitZoom : zoomPref;
+  // aqui o mapa só é visualizado: arrastar com o botão esquerdo (ou do meio) move
+  const { panning, containerProps } = useMapNavigation({
+    scrollRef,
+    zoom,
+    setZoom: setZoomPref,
+    shouldPan: (e) => e.button === 0 || e.button === 1,
+  });
   const [colorMode, setColorMode] = useState<RegionColorMode>('ethnicity');
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [showTrails, setShowTrails] = useState(true);
@@ -197,16 +209,7 @@ function MapTimeline({
               <option value="region">cor da região</option>
             </select>
           </label>
-          <label className="inline">
-            Zoom
-            <select value={zoom} onChange={(e) => setZoom(Number(e.target.value))}>
-              {ZOOMS.map((z) => (
-                <option key={z} value={z}>
-                  {z * 100}%
-                </option>
-              ))}
-            </select>
-          </label>
+          <ZoomSelect value={zoomPref} onChange={setZoomPref} />
           <Link className="button" to={`/stories/${storyId}/map/edit`}>
             ✏️ Editar mapa
           </Link>
@@ -284,8 +287,15 @@ function MapTimeline({
       )}
 
       <div className="map-viewer">
-        <div className="map-scroll">
-          <MapView map={doc} gridVersion={0} zoom={zoom} regionColorMode={colorMode} ethnicities={ethnicities}>
+        <div className="map-scroll" ref={scrollRef} {...containerProps}>
+          <MapView
+            map={doc}
+            gridVersion={0}
+            zoom={zoom}
+            regionColorMode={colorMode}
+            ethnicities={ethnicities}
+            cursor={panning ? 'grabbing' : 'grab'}
+          >
             {/* locais com eventos; os do momento ficam destacados */}
             {located.map((e) => {
               const loc = locations.get(e.locationId!)!;
