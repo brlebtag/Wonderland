@@ -29,6 +29,8 @@ export const FEATURE_TYPES = [
   { value: 'ruin', label: 'Ruína', icon: '🏚️' },
   { value: 'volcano', label: 'Vulcão', icon: '🌋' },
   { value: 'mountain', label: 'Montanha', icon: '⛰️' },
+  // desenhada como um grupo de montanhas (não é emoji)
+  { value: 'range', label: 'Cordilheira', icon: '' },
   { value: 'forest', label: 'Floresta', icon: '🌲' },
   { value: 'cave', label: 'Caverna', icon: '🕳️' },
   { value: 'landmark', label: 'Local', icon: '📍' },
@@ -39,11 +41,32 @@ export type FeatureType = (typeof FEATURE_TYPES)[number]['value'];
 export const PATH_TYPES = [
   { value: 'river', label: 'Rio', color: '#3f86c4', width: 0.8, dash: '' },
   { value: 'road', label: 'Estrada', color: '#8a6a45', width: 0.6, dash: '2 1.2' },
+  // desenhada como montanhas ao longo da linha (a linha em si não aparece)
+  { value: 'mountains', label: 'Cordilheira (linha)', color: '#6b5a3c', width: 0, dash: '' },
 ] as const;
 export type PathType = (typeof PATH_TYPES)[number]['value'];
 
-export type MapFeature = { id: string; type: FeatureType; name: string; x: number; y: number };
-export type MapPath = { id: string; type: PathType; name: string; points: Point[] };
+/** Escala de exibição de marcadores e linhas (1 = normal). */
+export const MIN_SIZE = 0.5;
+export const MAX_SIZE = 4;
+
+export type MapFeature = {
+  id: string;
+  type: FeatureType;
+  name: string;
+  x: number;
+  y: number;
+  /** Escala do ícone/rótulo; ausente = 1. */
+  size?: number;
+};
+export type MapPath = {
+  id: string;
+  type: PathType;
+  name: string;
+  points: Point[];
+  /** Espessura do traço / tamanho das montanhas; ausente = 1. */
+  size?: number;
+};
 export type MapRegion = {
   id: string;
   /** Valor gravado na regionGrid (1..65535). */
@@ -75,7 +98,7 @@ export type MapData = {
 };
 
 /** Lugar do mapa referenciado por um evento. */
-export type LocationKind = 'feature' | 'region' | 'territory';
+export type LocationKind = 'feature' | 'region' | 'territory' | 'path';
 export type EventLocation = { kind: LocationKind; id: string };
 
 // ---------- RLE ----------
@@ -162,6 +185,54 @@ export function territoryCenter(shape: TerritoryShape) {
   };
 }
 
+/** Comprimento de uma linha (em células). */
+export function pathLength(points: Point[]) {
+  let len = 0;
+  for (let i = 1; i < points.length; i++) {
+    len += Math.hypot(points[i][0] - points[i - 1][0], points[i][1] - points[i - 1][1]);
+  }
+  return len;
+}
+
+/**
+ * Pontos a cada `spacing` células ao longo da linha, com a direção do trecho
+ * (usado para espalhar as montanhas de uma cordilheira).
+ */
+export function samplePath(points: Point[], spacing: number) {
+  const out: { x: number; y: number; angle: number }[] = [];
+  let carry = spacing / 2; // começa meio passo para dentro da ponta
+  for (let i = 1; i < points.length; i++) {
+    const [x0, y0] = points[i - 1];
+    const [x1, y1] = points[i];
+    const seg = Math.hypot(x1 - x0, y1 - y0);
+    const angle = Math.atan2(y1 - y0, x1 - x0);
+    let d = carry;
+    while (d <= seg) {
+      out.push({ x: x0 + ((x1 - x0) * d) / seg, y: y0 + ((y1 - y0) * d) / seg, angle });
+      d += spacing;
+    }
+    carry = d - seg;
+  }
+  return out;
+}
+
+/** Ponto no meio do comprimento da linha (posição de um evento "no rio X"). */
+export function pathMidpoint(points: Point[]) {
+  const half = pathLength(points) / 2;
+  let walked = 0;
+  for (let i = 1; i < points.length; i++) {
+    const [x0, y0] = points[i - 1];
+    const [x1, y1] = points[i];
+    const seg = Math.hypot(x1 - x0, y1 - y0);
+    if (walked + seg >= half && seg > 0) {
+      const k = (half - walked) / seg;
+      return { x: x0 + (x1 - x0) * k, y: y0 + (y1 - y0) * k };
+    }
+    walked += seg;
+  }
+  return { x: points[0][0], y: points[0][1] };
+}
+
 export type MapLocation = EventLocation & { name: string; group: string; x: number; y: number };
 
 /** Todos os lugares que um evento pode referenciar, com o ponto usado para posicioná-lo. */
@@ -169,6 +240,7 @@ export function listLocations(map: MapData): MapLocation[] {
   const grid = decodeRle(map.regionGrid, new Uint16Array(map.width * map.height));
   const anchors = regionAnchors(map.width, grid);
   const featureLabel = (t: string) => FEATURE_TYPES.find((f) => f.value === t)?.label ?? t;
+  const pathLabel = (t: string) => PATH_TYPES.find((p) => p.value === t)?.label ?? t;
 
   return [
     ...map.features.map((f) => ({
@@ -189,6 +261,13 @@ export function listLocations(map: MapData): MapLocation[] {
       name: t.name,
       group: 'Território',
       ...territoryCenter(t.shape),
+    })),
+    ...map.paths.map((p) => ({
+      kind: 'path' as const,
+      id: p.id,
+      name: p.name || pathLabel(p.type),
+      group: pathLabel(p.type),
+      ...pathMidpoint(p.points),
     })),
   ];
 }

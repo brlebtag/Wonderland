@@ -4,7 +4,9 @@ import {
   decodeRle,
   encodeRle,
   listLocations,
+  pathMidpoint,
   positionAt,
+  samplePath,
   regionAnchors,
   type MapData,
 } from '@wonderland/shared';
@@ -56,6 +58,27 @@ describe('listLocations', () => {
     const locs = listLocations(map);
     expect(locs.map((l) => `${l.kind}:${l.name}`)).toEqual(['feature:Capital', 'region:Norte', 'territory:Tribo']);
     expect(locs[1]).toMatchObject({ x: 2.5, y: 0.5 });
+  });
+});
+
+describe('linhas', () => {
+  it('distribui pontos ao longo da linha, atravessando os vértices', () => {
+    const pts = samplePath([[0, 0], [4, 0], [4, 4]], 2);
+    expect(pts.map((p) => [p.x, p.y])).toEqual([[1, 0], [3, 0], [4, 1], [4, 3]]);
+  });
+
+  it('acha o ponto do meio pelo comprimento', () => {
+    expect(pathMidpoint([[0, 0], [4, 0], [4, 4]])).toEqual({ x: 4, y: 0 });
+  });
+
+  it('linhas viram locais de evento', () => {
+    const map: MapData = {
+      ...createEmptyMap(10, 10),
+      paths: [{ id: 'p1', type: 'mountains', name: '', points: [[0, 5], [10, 5]] }],
+    };
+    expect(listLocations(map)).toEqual([
+      { kind: 'path', id: 'p1', name: 'Cordilheira (linha)', group: 'Cordilheira (linha)', x: 5, y: 5 },
+    ]);
   });
 });
 

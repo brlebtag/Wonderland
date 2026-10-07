@@ -4,6 +4,8 @@ import {
   createEmptyMap,
   FEATURE_TYPES,
   LAND,
+  MAX_SIZE,
+  MIN_SIZE,
   PATH_TYPES,
   TERRAIN_TYPES,
   type FeatureType,
@@ -13,7 +15,14 @@ import {
 } from '@wonderland/shared';
 import { useEthnicities, useMap, useSaveMap, useStory, type Ethnicity } from '../api';
 import { cloneMap, fromData, newId, REGION_PALETTE, toData, type EditableMap } from '../map/mapDoc';
-import { MapView, parseColorMode, type MapSelection, type RegionColorMode } from '../map/MapView';
+import {
+  CELL_PX,
+  featureExtent,
+  MapView,
+  parseColorMode,
+  type MapSelection,
+  type RegionColorMode,
+} from '../map/MapView';
 import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
 import { useMapNavigation } from '../map/useMapNavigation';
 import { ZoomSelect } from '../map/ZoomSelect';
@@ -26,8 +35,8 @@ const TOOLS: { value: Tool; label: string; hint: string }[] = [
   { value: 'select', label: '🖱️ Selecionar', hint: 'Clique num elemento para editar; arraste marcadores para mover.' },
   { value: 'terrain', label: '🖌️ Terreno', hint: 'Pinte terra, mar e lagos.' },
   { value: 'region', label: '🗺️ Regiões', hint: 'Pinte regiões sobre a terra (a borracha tira a região).' },
-  { value: 'feature', label: '📍 Marcador', hint: 'Clique para colocar cidades, vulcões, rótulos...' },
-  { value: 'path', label: '〰️ Rio/estrada', hint: 'Clique ponto a ponto; duplo clique ou Enter conclui, Esc cancela.' },
+  { value: 'feature', label: '📍 Marcador', hint: 'Clique para colocar cidades, vulcões, cordilheiras, rótulos... Arraste as alças nos cantos para redimensionar.' },
+  { value: 'path', label: '〰️ Linhas', hint: 'Rios, estradas e cordilheiras: clique ponto a ponto; duplo clique ou Enter conclui, Esc cancela.' },
   { value: 'circle', label: '◯ Território (raio)', hint: 'Arraste do centro para fora para definir o raio.' },
   { value: 'polygon', label: '⬠ Território (polígono)', hint: 'Clique os vértices; duplo clique ou Enter conclui.' },
 ];
@@ -128,7 +137,8 @@ function EthnicitySelect({
 type Gesture =
   | { kind: 'paint'; last: Point }
   | { kind: 'circle' }
-  | { kind: 'drag'; id: string; moved: boolean };
+  | { kind: 'drag'; id: string; moved: boolean }
+  | { kind: 'resize'; id: string; cx: number; cy: number; startDist: number; startSize: number };
 
 function MapEditor({
   storyId,
@@ -307,7 +317,33 @@ function MapEditor({
         ...d,
         features: d.features.map((f) => (f.id === g.id ? { ...f, x: p[0], y: p[1] } : f)),
       }));
+    } else if (g.kind === 'resize') {
+      // escala proporcional à distância do cursor ao centro do marcador
+      const dist = Math.hypot(p[0] - g.cx, p[1] - g.cy);
+      const size = Math.min(MAX_SIZE, Math.max(MIN_SIZE, (g.startSize * dist) / g.startDist));
+      update((d) => ({
+        ...d,
+        features: d.features.map((f) => (f.id === g.id ? { ...f, size: Math.round(size * 100) / 100 } : f)),
+      }));
     }
+  }
+
+  /** Alça de canto do marcador selecionado: começa a redimensionar. */
+  function startResize(e: PointerEvent, featureId: string) {
+    e.stopPropagation();
+    const f = docRef.current.features.find((x) => x.id === featureId);
+    if (!f) return;
+    pushUndo();
+    const p = toCell(e);
+    gesture.current = {
+      kind: 'resize',
+      id: f.id,
+      cx: f.x,
+      cy: f.y,
+      startDist: Math.max(0.5, Math.hypot(p[0] - f.x, p[1] - f.y)),
+      startSize: f.size ?? 1,
+    };
+    svgRef.current?.setPointerCapture(e.pointerId);
   }
 
   function onPointerUp() {
@@ -576,6 +612,7 @@ function MapEditor({
               />
             )}
             {circle && <circle className="draft circle" cx={circle.cx} cy={circle.cy} r={circle.r} />}
+            {selFeature && <ResizeHandles feature={selFeature} zoom={zoom} onStart={startResize} />}
           </MapView>
         </div>
 
@@ -688,6 +725,18 @@ function MapEditor({
                   ))}
                 </select>
               </label>
+              <label>
+                Tamanho: {Math.round((selFeature.size ?? 1) * 100)}%
+                <input
+                  type="range"
+                  min={MIN_SIZE}
+                  max={MAX_SIZE}
+                  step={0.05}
+                  value={selFeature.size ?? 1}
+                  onPointerDown={pushUndo}
+                  onChange={(e) => patchFeature({ size: Number(e.target.value) })}
+                />
+              </label>
               <button className="danger" onClick={deleteSelected}>Excluir marcador</button>
             </section>
           )}
@@ -708,6 +757,19 @@ function MapEditor({
                     </option>
                   ))}
                 </select>
+              </label>
+              <label>
+                {selPath.type === 'mountains' ? 'Tamanho das montanhas' : 'Espessura'}:{' '}
+                {Math.round((selPath.size ?? 1) * 100)}%
+                <input
+                  type="range"
+                  min={MIN_SIZE}
+                  max={MAX_SIZE}
+                  step={0.05}
+                  value={selPath.size ?? 1}
+                  onPointerDown={pushUndo}
+                  onChange={(e) => patchPath({ size: Number(e.target.value) })}
+                />
               </label>
               <button className="danger" onClick={deleteSelected}>Excluir linha</button>
             </section>
@@ -811,5 +873,51 @@ function MapEditor({
         </aside>
       </div>
     </main>
+  );
+}
+
+/** Caixa tracejada + quatro alças nos cantos do marcador selecionado. */
+function ResizeHandles({
+  feature,
+  zoom,
+  onStart,
+}: {
+  feature: EditableMap['features'][number];
+  zoom: number;
+  onStart: (e: PointerEvent, featureId: string) => void;
+}) {
+  const { ex, ey } = featureExtent(feature);
+  // alças com tamanho fixo na tela (~10px), independente do zoom
+  const h = 10 / (CELL_PX * zoom);
+  const corners = [
+    { x: feature.x - ex, y: feature.y - ey, cursor: 'nwse-resize' },
+    { x: feature.x + ex, y: feature.y - ey, cursor: 'nesw-resize' },
+    { x: feature.x - ex, y: feature.y + ey, cursor: 'nesw-resize' },
+    { x: feature.x + ex, y: feature.y + ey, cursor: 'nwse-resize' },
+  ];
+  return (
+    <g>
+      <rect
+        className="resize-box"
+        x={feature.x - ex}
+        y={feature.y - ey}
+        width={ex * 2}
+        height={ey * 2}
+        strokeWidth={1.5 / (CELL_PX * zoom)}
+      />
+      {corners.map((c, i) => (
+        <rect
+          key={i}
+          className="resize-handle"
+          x={c.x - h / 2}
+          y={c.y - h / 2}
+          width={h}
+          height={h}
+          strokeWidth={1.5 / (CELL_PX * zoom)}
+          style={{ cursor: c.cursor }}
+          onPointerDown={(e) => onStart(e, feature.id)}
+        />
+      ))}
+    </g>
   );
 }

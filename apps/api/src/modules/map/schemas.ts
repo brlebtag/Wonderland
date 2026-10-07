@@ -2,6 +2,8 @@ import { z } from 'zod';
 import {
   decodeRle,
   FEATURE_TYPES,
+  MAX_SIZE,
+  MIN_SIZE,
   PATH_TYPES,
   TERRAIN_TYPES,
   type MapData,
@@ -13,6 +15,7 @@ const elementId = z.string().min(1).max(64);
 const name = z.string().max(200);
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 const ethnicityId = z.string().min(1).nullable();
+const size = z.number().min(MIN_SIZE).max(MAX_SIZE).optional();
 
 const region = z.object({
   id: elementId,
@@ -28,6 +31,7 @@ const feature = z.object({
   name,
   x: coord,
   y: coord,
+  size,
 });
 
 const path = z.object({
@@ -35,6 +39,7 @@ const path = z.object({
   type: z.enum(PATH_TYPES.map((p) => p.value)),
   name,
   points: z.array(point).min(2).max(5000),
+  size,
 });
 
 const shape = z.discriminatedUnion('kind', [

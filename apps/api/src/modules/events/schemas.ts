@@ -18,7 +18,7 @@ const characterIds = z
 
 // Lugar no mapa da história (null = sem local).
 const location = z
-  .object({ kind: z.enum(['feature', 'region', 'territory']), id: z.string().min(1).max(64) })
+  .object({ kind: z.enum(['feature', 'region', 'territory', 'path']), id: z.string().min(1).max(64) })
   .nullable();
 
 export const eventCreate = z.object({

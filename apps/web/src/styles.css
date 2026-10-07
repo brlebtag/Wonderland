@@ -437,7 +437,7 @@ input[type='color'] { width: 40px; height: 36px; padding: 2px; }
 .map-feature .icon { font-size: 5px; text-anchor: middle; dominant-baseline: central; }
 .map-feature .name { font-size: 2.6px; font-weight: 600; text-anchor: middle; dominant-baseline: hanging; }
 .map-feature .ring { fill: transparent; stroke: none; }
-.map-feature.selected .ring { stroke: var(--accent); stroke-width: 0.4; }
+/* seleção de marcador: indicada pela caixa com alças do editor */
 .map-label { font-size: 4px; font-style: italic; text-anchor: middle; dominant-baseline: central; letter-spacing: 0.3px; fill: #4a3b25; }
 .map-label.selected { fill: var(--accent); }
 
@@ -489,3 +489,15 @@ input[type='color'] { width: 40px; height: 36px; padding: 2px; }
 .nav-hint { opacity: 0.8; }
 
 label.inline.check { color: var(--text); margin-top: 4px; }
+
+/* cordilheiras */
+.mountains .peak { fill: #d9c9a3; stroke: #6b5a3c; stroke-width: 0.22; stroke-linejoin: round; }
+.mountains .shade { fill: rgb(60 45 25 / 0.22); }
+.mountain-guide { fill: none; stroke: transparent; stroke-width: 0.3; stroke-dasharray: 0.8 0.6; }
+.map-path.selected .mountain-guide { stroke: var(--accent); }
+.map-path.selected .mountains .peak { stroke: var(--accent); }
+.path-label { font-style: italic; text-anchor: middle; dominant-baseline: hanging; fill: #4a3b25; }
+
+/* alças de redimensionar marcador */
+.resize-box { fill: none; stroke: var(--accent); stroke-dasharray: 0.8 0.5; pointer-events: none; }
+.map-svg .resize-handle { fill: #fff; stroke: var(--accent); pointer-events: all !important; }

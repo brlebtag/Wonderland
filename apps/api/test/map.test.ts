@@ -27,8 +27,11 @@ function sampleMap(ethnicityId: string | null = null): MapData {
     terrain: '1*50,0*50',
     regionGrid: '5*50,0*50',
     regions: [{ id: 'reg-norte', code: 5, name: 'Norte', color: '#aa3322', ethnicityId }],
-    features: [{ id: 'f-capital', type: 'city', name: 'Capital', x: 2, y: 2 }],
-    paths: [{ id: 'p-rio', type: 'river', name: 'Rio', points: [[0, 0], [5, 5]] }],
+    features: [{ id: 'f-capital', type: 'city', name: 'Capital', x: 2, y: 2, size: 2 }],
+    paths: [
+      { id: 'p-rio', type: 'river', name: 'Rio', points: [[0, 0], [5, 5]] },
+      { id: 'p-serra', type: 'mountains', name: 'Serra', points: [[1, 1], [8, 1]], size: 1.5 },
+    ],
     territories: [
       { id: 't-tribo', name: 'Tribo', ethnicityId, shape: { kind: 'circle', cx: 5, cy: 5, r: 3 } },
     ],
@@ -100,6 +103,7 @@ describe('mapa', () => {
       { regionGrid: '6*100' }, // região inexistente
       { features: [{ id: 'reg-norte', type: 'city', name: 'Dup', x: 0, y: 0 }] }, // id repetido
       { regions: [{ ...base.regions[0], ethnicityId: 'nao-existe' }] }, // etnia de fora
+      { features: [{ ...base.features[0], size: 10 }] }, // tamanho fora do limite
     ];
     for (const patch of invalid) {
       const res = await req('PUT', `/api/stories/${story.id}/map`, { data: { ...base, ...patch } });
@@ -144,6 +148,10 @@ describe('local dos eventos', () => {
     const events = (await req('GET', `/api/stories/${story.id}/events`)).json();
     expect(events.find((e: { id: string }) => e.id === naCapital.id).locationId).toBeNull();
     expect(events.find((e: { id: string }) => e.id === noNorte.id).locationId).toBe('reg-norte');
+
+    // linhas (rios, estradas, cordilheiras) também são locais
+    const noRio = await ok('PATCH', `/api/events/${noNorte.id}`, { location: { kind: 'path', id: 'p-rio' } });
+    expect(noRio).toMatchObject({ locationKind: 'path', locationId: 'p-rio' });
 
     // e dá para tirar o local explicitamente
     const cleared = await ok('PATCH', `/api/events/${noNorte.id}`, { location: null });

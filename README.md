@@ -24,14 +24,16 @@ consistência da narrativa.
   vinculado a uma etnia; no mapa, regiões e territórios também.
 - **Mapa da história** — editor no estilo "paint":
   - pinte **terra, mar e lagos** com pincel e divida a terra em **regiões** (pintadas por cima);
-  - marque **cidades, vilarejos, castelos, portos, templos, ruínas, vulcões, montanhas, florestas,
-    cavernas**, locais genéricos e rótulos de texto (nomes de mares, continentes...);
-  - desenhe **rios e estradas**;
+  - marque **cidades, vilarejos, castelos, portos, templos, ruínas, vulcões, montanhas,
+    cordilheiras, florestas, cavernas**, locais genéricos e rótulos de texto (nomes de mares,
+    continentes...); cada marcador pode ser **redimensionado** pelas alças nos cantos ou pelo controle
+    de tamanho;
+  - desenhe **rios, estradas e cordilheiras em linha** (montanhas distribuídas ao longo do traço);
   - delimite **territórios** de uma etnia com linha tracejada (círculo/"raio" ou polígono), que podem
     atravessar várias regiões — ex.: uma tribo que transita entre dois países;
   - selecionar e arrastar, desfazer (Ctrl+Z), apagar (Delete), zoom e salvar.
-- **Local dos eventos** — cada evento pode apontar para um marcador, uma região ou um território do
-  mapa ("evento X, no ano Y, com W, K e Z, em P").
+- **Local dos eventos** — cada evento pode apontar para um marcador, uma região, um território ou
+  uma linha (rio, estrada, cordilheira) do mapa ("evento X, no ano Y, com W, K e Z, em P").
 - **Mapa no tempo** — régua do primeiro ao último evento (com play, velocidade e saltos de evento em
   evento): os personagens aparecem no local do seu primeiro evento e se deslocam em linha reta entre
   os locais dos eventos seguintes, proporcional ao tempo; com trilhas do caminho percorrido.
@@ -160,12 +162,14 @@ O mapa é **um documento JSON por história** (formato em
 
 - **Grade pintada**: `terrain` (mar/terra/lago por célula) e `regionGrid` (região de cada célula),
   guardadas em RLE (`valor*quantidade,...`). Tamanho escolhido ao criar (160×100, 240×150 ou 360×225).
-- **Elementos vetoriais** em coordenadas de célula: `features` (marcadores), `paths` (rios e
-  estradas), `territories` (círculo ou polígono, com etnia) e `regions` (nome, cor, etnia).
+- **Elementos vetoriais** em coordenadas de célula: `features` (marcadores, com `size` opcional),
+  `paths` (rios, estradas e cordilheiras, com `size` opcional), `territories` (círculo ou
+  polígono, com etnia) e `regions` (nome, cor, etnia).
 
-Um evento referencia um marcador, uma região ou um território pelo id. Ao salvar o mapa, eventos que
+Um evento referencia um marcador, uma região, um território ou uma linha pelo id. Ao salvar o mapa, eventos que
 apontavam para um elemento removido **ficam sem local** (a API informa quantos). Para posicionar uma
-região usa-se a célula dela mais próxima do seu centro; um território usa o centro do círculo/polígono.
+região usa-se a célula dela mais próxima do seu centro; um território usa o centro do círculo/polígono;
+uma linha, o ponto no meio do seu comprimento.
 
 ### Ficha de personagem
 
@@ -200,7 +204,7 @@ Erros de validação respondem `400`; registros inexistentes ou na lixeira, `404
 | DELETE | `/stories/:id` | Lixeira (soft delete) |
 | POST | `/stories/:id/restore` | Restaura da lixeira |
 | GET | `/stories/:id/events` | Eventos ordenados por data, com `characters: [{ id, name }]` |
-| POST | `/stories/:id/events` | Cria `{ title, date, description?, characterIds?, location? }`; `location` = `{ kind, id }` com kind `feature`, `region` ou `territory` |
+| POST | `/stories/:id/events` | Cria `{ title, date, description?, characterIds?, location? }`; `location` = `{ kind, id }` com kind `feature`, `region`, `territory` ou `path` |
 | PATCH | `/events/:id` | Atualiza (`characterIds` substitui os vínculos) |
 | DELETE | `/events/:id` | Lixeira |
 | GET | `/stories/:id/characters` | Personagens da história |

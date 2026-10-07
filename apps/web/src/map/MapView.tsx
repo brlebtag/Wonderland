@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, type PointerEvent, type ReactNode, type Ref } from 'react';
-import { FEATURE_TYPES, PATH_TYPES, territoryCenter } from '@wonderland/shared';
+import {
+  FEATURE_TYPES,
+  PATH_TYPES,
+  pathMidpoint,
+  samplePath,
+  territoryCenter,
+  type MapFeature,
+  type MapPath,
+} from '@wonderland/shared';
 import type { Ethnicity } from '../api';
 import type { EditableMap } from './mapDoc';
 import { renderGrid } from './renderGrid';
@@ -39,6 +47,78 @@ type Props = {
 
 const featureIcon = (type: string) => FEATURE_TYPES.find((f) => f.value === type)?.icon ?? '📍';
 const pathStyle = (type: string) => PATH_TYPES.find((p) => p.value === type) ?? PATH_TYPES[0];
+
+/** Pseudoaleatório estável (mesma cordilheira = mesmas montanhas a cada render). */
+const noise = (n: number) => {
+  const x = Math.sin(n * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+/** Uma montanha: base em (x, base), pico `h` acima, meia-largura `w`. */
+function Peak({ x, base, h, w }: { x: number; base: number; h: number; w: number }) {
+  return (
+    <g>
+      <path d={`M${x - w},${base} L${x},${base - h} L${x + w},${base} Z`} className="peak" />
+      {/* lado na sombra */}
+      <path d={`M${x},${base - h} L${x + w},${base} L${x + w * 0.25},${base} Z`} className="shade" />
+    </g>
+  );
+}
+
+/** Marcador "Cordilheira": um grupo fixo de montanhas centrado em (x, y). */
+const RANGE_PEAKS = [
+  { dx: -3.0, db: 0.2, h: 2.4, w: 1.5 },
+  { dx: 2.7, db: 0.3, h: 2.3, w: 1.4 },
+  { dx: -1.3, db: -0.2, h: 3.6, w: 1.9 },
+  { dx: 0.8, db: 0, h: 3.0, w: 1.7 },
+  { dx: -0.2, db: 0.9, h: 1.9, w: 1.3 },
+];
+function RangeMarker({ x, y, size }: { x: number; y: number; size: number }) {
+  return (
+    <g className="mountains">
+      {RANGE_PEAKS.map((p, i) => (
+        <Peak key={i} x={x + p.dx * size} base={y + (1.4 + p.db) * size} h={p.h * size} w={p.w * size} />
+      ))}
+    </g>
+  );
+}
+
+/** Meia-largura/meia-altura (em células) do desenho de um marcador — usado pelas alças de redimensionar. */
+export function featureExtent(f: MapFeature) {
+  const s = f.size ?? 1;
+  if (f.type === 'label') {
+    const font = 4 * s;
+    return { ex: Math.max(2, (f.name || 'Rótulo').length * font * 0.28), ey: font * 0.6 };
+  }
+  if (f.type === 'range') return { ex: 4.8 * s, ey: 2.6 * s };
+  return { ex: 3 * s, ey: 3 * s };
+}
+
+/**
+ * Montanhas espalhadas ao longo da linha da cordilheira, com variação de altura,
+ * largura e um leve desvio para os lados. Desenhadas de trás para a frente (por y).
+ */
+function Mountains({ path }: { path: MapPath }) {
+  const s = path.size ?? 1;
+  const peaks = samplePath(path.points, 3 * s)
+    .map((p, i) => {
+      const h = (3.2 + noise(i + 1) * 1.8) * s;
+      const w = (1.8 + noise(i + 7) * 0.8) * s;
+      // desvio perpendicular à linha
+      const off = (noise(i + 13) - 0.5) * 1.6 * s;
+      const x = p.x - Math.sin(p.angle) * off;
+      const base = p.y + Math.cos(p.angle) * off + h / 2;
+      return { x, base, h, w };
+    })
+    .sort((a, b) => a.base - b.base);
+  return (
+    <g className="mountains">
+      {peaks.map((m, i) => (
+        <Peak key={i} {...m} />
+      ))}
+    </g>
+  );
+}
 
 export function MapView({
   map,
@@ -127,18 +207,38 @@ export function MapView({
           );
         })}
 
-        {/* rios e estradas */}
+        {/* rios, estradas e cordilheiras */}
         {map.paths.map((p) => {
           const style = pathStyle(p.type);
+          const size = p.size ?? 1;
           const points = p.points.map((pt) => pt.join(',')).join(' ');
+          const mid = p.name ? pathMidpoint(p.points) : null;
           return (
             <g key={p.id} className={isSelected('path', p.id) ? 'map-path selected' : 'map-path'}>
-              <polyline
-                points={points}
-                stroke={style.color}
-                strokeWidth={style.width}
-                strokeDasharray={style.dash || undefined}
-              />
+              {p.type === 'mountains' ? (
+                <>
+                  {/* guia da linha: só aparece quando selecionada */}
+                  <polyline className="mountain-guide" points={points} />
+                  <Mountains path={p} />
+                </>
+              ) : (
+                <polyline
+                  points={points}
+                  stroke={style.color}
+                  strokeWidth={style.width * size}
+                  strokeDasharray={style.dash || undefined}
+                />
+              )}
+              {mid && (
+                <text
+                  className="map-text path-label"
+                  x={mid.x}
+                  y={mid.y + (p.type === 'mountains' ? 4.2 * size : 2)}
+                  style={{ fontSize: `${2.4 * Math.sqrt(size)}px` }}
+                >
+                  {p.name}
+                </text>
+              )}
               {/* área de clique mais larga que o traço */}
               {selectable && <polyline className="hit" points={points} onPointerDown={down('path', p.id)} />}
             </g>
@@ -153,6 +253,7 @@ export function MapView({
               className={`map-text map-label ${isSelected('feature', f.id) ? 'selected' : ''}`}
               x={f.x}
               y={f.y}
+              style={{ fontSize: `${4 * (f.size ?? 1)}px` }}
               onPointerDown={down('feature', f.id)}
             >
               {f.name || 'Rótulo'}
@@ -163,12 +264,22 @@ export function MapView({
               className={`map-feature ${isSelected('feature', f.id) ? 'selected' : ''}`}
               onPointerDown={down('feature', f.id)}
             >
-              <circle className="ring" cx={f.x} cy={f.y} r={3} />
-              <text className="icon" x={f.x} y={f.y}>
-                {featureIcon(f.type)}
-              </text>
+              <circle className="ring" cx={f.x} cy={f.y} r={Math.max(featureExtent(f).ex, featureExtent(f).ey)} />
+              {f.type === 'range' ? (
+                <RangeMarker x={f.x} y={f.y} size={f.size ?? 1} />
+              ) : (
+                <text className="icon" x={f.x} y={f.y} style={{ fontSize: `${5 * (f.size ?? 1)}px` }}>
+                  {featureIcon(f.type)}
+                </text>
+              )}
               {f.name && (
-                <text className="map-text name" x={f.x} y={f.y + 3.2}>
+                <text
+                  className="map-text name"
+                  x={f.x}
+                  y={f.y + (f.type === 'range' ? 2.2 : 3.2) * (f.size ?? 1)}
+                  // o nome cresce menos que o ícone, para não dominar o mapa
+                  style={{ fontSize: `${2.6 * Math.sqrt(f.size ?? 1)}px` }}
+                >
                   {f.name}
                 </text>
               )}
