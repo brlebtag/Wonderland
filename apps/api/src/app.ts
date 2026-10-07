@@ -4,6 +4,7 @@ import { BadRequestError, NotFoundError } from './errors';
 import { storyRoutes } from './modules/stories/routes';
 import { eventRoutes } from './modules/events/routes';
 import { characterRoutes } from './modules/characters/routes';
+import { trashRoutes } from './modules/trash/routes';
 
 export function buildApp() {
   const app = Fastify({ logger: process.env.NODE_ENV !== 'test' });
@@ -28,6 +29,7 @@ export function buildApp() {
   app.register(storyRoutes, { prefix: '/api' });
   app.register(eventRoutes, { prefix: '/api' });
   app.register(characterRoutes, { prefix: '/api' });
+  app.register(trashRoutes, { prefix: '/api' });
 
   return app;
 }

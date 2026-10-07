@@ -33,4 +33,19 @@ export const characterService = {
     await get(id);
     return eventRepository.listByCharacter(id);
   },
+  async restore(id: string) {
+    await getDeleted(id);
+    return repo.restore(id);
+  },
+  // Só remove de vez o que já está na lixeira (de uma história que não está na lixeira).
+  async purge(id: string) {
+    await getDeleted(id);
+    await repo.purge(id);
+  },
 };
+
+async function getDeleted(id: string) {
+  const character = await repo.findDeletedById(id);
+  if (!character) throw new NotFoundError('Character not in trash');
+  return character;
+}

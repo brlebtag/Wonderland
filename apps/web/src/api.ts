@@ -61,6 +61,8 @@ const keys = {
   allCharacters: ['characters'] as const,
   character: (id: string) => ['characters', id] as const,
   characterEvents: (id: string) => ['characters', id, 'events'] as const,
+  storyTrash: (storyId: string) => ['stories', storyId, 'trash'] as const,
+  trash: ['trash'] as const,
 };
 
 // ---------- histórias ----------
@@ -96,7 +98,11 @@ export function useDeleteStory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => request<void>(`/stories/${id}`, 'DELETE'),
-    onSuccess: () => qc.invalidateQueries({ queryKey: keys.stories }),
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: keys.stories }),
+        qc.invalidateQueries({ queryKey: keys.trash }),
+      ]),
   });
 }
 
@@ -108,12 +114,12 @@ export const useEvents = (storyId: string) =>
     queryFn: () => request<StoryEvent[]>(`/stories/${storyId}/events`),
   });
 
-/** Eventos mudam também as listas de eventos por personagem. */
+/** Eventos mudam também a lixeira da história e as listas de eventos por personagem. */
 function useInvalidateEvents(storyId: string) {
   const qc = useQueryClient();
   return () =>
     Promise.all([
-      qc.invalidateQueries({ queryKey: keys.events(storyId) }),
+      qc.invalidateQueries({ queryKey: keys.story(storyId) }),
       qc.invalidateQueries({ queryKey: keys.allCharacters }),
     ]);
 }
@@ -201,7 +207,61 @@ export function useDeleteCharacter(storyId: string) {
   });
 }
 
+// ---------- lixeira ----------
+
+type Trashed = { deletedAt: string };
+export type TrashedStory = Story & Trashed & { _count: { events: number; characters: number } };
+export type StoryTrash = {
+  events: (StoryEvent & Trashed)[];
+  characters: (Character & Trashed)[];
+};
+
+export const useTrashedStories = () =>
+  useQuery({ queryKey: keys.trash, queryFn: () => request<TrashedStory[]>('/trash/stories') });
+
+export const useStoryTrash = (storyId: string) =>
+  useQuery({
+    queryKey: keys.storyTrash(storyId),
+    queryFn: () => request<StoryTrash>(`/stories/${storyId}/trash`),
+  });
+
+/** Restaurar/remover histórias mexe na lista de histórias e na lixeira geral. */
+function useStoryTrashMutation(action: (id: string) => Promise<unknown>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: action,
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: keys.stories }),
+        qc.invalidateQueries({ queryKey: keys.trash }),
+        qc.invalidateQueries({ queryKey: keys.allCharacters }),
+      ]),
+  });
+}
+
+export const useRestoreStory = () =>
+  useStoryTrashMutation((id) => request(`/stories/${id}/restore`, 'POST'));
+export const usePurgeStory = () =>
+  useStoryTrashMutation((id) => request(`/stories/${id}/permanent`, 'DELETE'));
+
+/** Restaurar/remover eventos e personagens recarrega tudo da história e dos personagens. */
+function useItemTrashMutation(storyId: string, action: (id: string) => Promise<unknown>) {
+  const invalidate = useInvalidateCharacters(storyId);
+  return useMutation({ mutationFn: action, onSuccess: invalidate });
+}
+
+export const useRestoreEvent = (storyId: string) =>
+  useItemTrashMutation(storyId, (id) => request(`/events/${id}/restore`, 'POST'));
+export const usePurgeEvent = (storyId: string) =>
+  useItemTrashMutation(storyId, (id) => request(`/events/${id}/permanent`, 'DELETE'));
+export const useRestoreCharacter = (storyId: string) =>
+  useItemTrashMutation(storyId, (id) => request(`/characters/${id}/restore`, 'POST'));
+export const usePurgeCharacter = (storyId: string) =>
+  useItemTrashMutation(storyId, (id) => request(`/characters/${id}/permanent`, 'DELETE'));
+
 // ---------- datas ----------
+
+export const formatDateTime = (iso: string) => new Date(iso).toLocaleString('pt-BR');
 
 export const toInputDate = (iso: string) => iso.slice(0, 10);
 

@@ -20,7 +20,15 @@ consistência da narrativa.
   - Personagens podem ser criados direto do formulário de evento, só com o nome.
   - Com data de nascimento preenchida, mostra a idade nos "dias atuais" da história.
 
-Ainda **não** há login nem tela de lixeira (a API já restaura histórias: `POST /api/stories/:id/restore`).
+- **Lixeira** — nada é apagado de imediato: histórias, eventos e personagens vão para a lixeira.
+  - **Lixeira geral** (`/trash`, botão na lista de histórias): histórias apagadas, com quantos
+    eventos e personagens cada uma contém.
+  - **Lixeira da história** (aba ao lado de Eventos e Personagens): eventos e personagens apagados.
+  - Cada item pode ser **restaurado** ou **excluído permanentemente** (com confirmação; só vale para
+    o que já está na lixeira). Excluir uma história remove junto seus eventos e personagens; excluir
+    um personagem mantém os eventos dele. Restaurar um personagem devolve os vínculos com os eventos.
+
+Ainda **não** há login.
 
 ## Stack
 
@@ -160,6 +168,11 @@ Erros de validação respondem `400`; registros inexistentes ou na lixeira, `404
 | PATCH | `/characters/:id` | Atualiza (`attributes` substitui a ficha inteira) |
 | DELETE | `/characters/:id` | Lixeira (some dos eventos; o vínculo é mantido) |
 | GET | `/characters/:id/events` | Eventos do personagem |
+| GET | `/trash/stories` | Histórias na lixeira (com `_count` de eventos e personagens) |
+| GET | `/stories/:id/trash` | Eventos e personagens na lixeira da história |
+| POST | `/events/:id/restore` · `/characters/:id/restore` | Restaura da lixeira |
+| DELETE | `/stories/:id/permanent` | Exclui de vez a história (já na lixeira) com eventos e personagens |
+| DELETE | `/events/:id/permanent` · `/characters/:id/permanent` | Exclui de vez (só itens na lixeira) |
 
 ## Migrando para Postgres
 

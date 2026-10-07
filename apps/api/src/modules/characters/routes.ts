@@ -27,6 +27,15 @@ export async function characterRoutes(app: FastifyInstance) {
     return reply.status(204).send();
   });
 
+  app.post('/characters/:id/restore', (req) =>
+    characterService.restore(idParams.parse(req.params).id),
+  );
+
+  app.delete('/characters/:id/permanent', async (req, reply) => {
+    await characterService.purge(idParams.parse(req.params).id);
+    return reply.status(204).send();
+  });
+
   app.get('/characters/:id/events', (req) =>
     characterService.listEvents(idParams.parse(req.params).id),
   );

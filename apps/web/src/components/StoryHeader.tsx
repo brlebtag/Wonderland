@@ -20,6 +20,7 @@ export function StoryHeader({ story }: { story: Story }) {
           Eventos
         </NavLink>
         <NavLink to={`/stories/${story.id}/characters`}>Personagens</NavLink>
+        <NavLink to={`/stories/${story.id}/trash`}>Lixeira</NavLink>
       </nav>
     </>
   );

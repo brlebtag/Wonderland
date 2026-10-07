@@ -36,4 +36,19 @@ export const eventService = {
     await get(id);
     await repo.softDelete(id);
   },
+  async restore(id: string) {
+    await getDeleted(id);
+    return repo.restore(id);
+  },
+  // Só remove de vez o que já está na lixeira (de uma história que não está na lixeira).
+  async purge(id: string) {
+    await getDeleted(id);
+    await repo.purge(id);
+  },
 };
+
+async function getDeleted(id: string) {
+  const event = await repo.findDeletedById(id);
+  if (!event) throw new NotFoundError('Event not in trash');
+  return event;
+}

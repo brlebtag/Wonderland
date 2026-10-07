@@ -22,4 +22,11 @@ export async function eventRoutes(app: FastifyInstance) {
     await eventService.remove(idParams.parse(req.params).id);
     return reply.status(204).send();
   });
+
+  app.post('/events/:id/restore', (req) => eventService.restore(idParams.parse(req.params).id));
+
+  app.delete('/events/:id/permanent', async (req, reply) => {
+    await eventService.purge(idParams.parse(req.params).id);
+    return reply.status(204).send();
+  });
 }

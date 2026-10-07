@@ -22,4 +22,11 @@ export async function storyRoutes(app: FastifyInstance) {
   });
 
   app.post('/stories/:id/restore', (req) => storyService.restore(idParams.parse(req.params).id));
+
+  app.get('/trash/stories', () => storyService.listDeleted());
+
+  app.delete('/stories/:id/permanent', async (req, reply) => {
+    await storyService.purge(idParams.parse(req.params).id);
+    return reply.status(204).send();
+  });
 }

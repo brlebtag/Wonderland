@@ -9,6 +9,8 @@ import { EventFormPage } from './pages/EventFormPage';
 import { StoriesPage } from './pages/StoriesPage';
 import { StoryFormPage } from './pages/StoryFormPage';
 import { StoryPage } from './pages/StoryPage';
+import { StoryTrashPage } from './pages/StoryTrashPage';
+import { TrashPage } from './pages/TrashPage';
 import './styles.css';
 
 const queryClient = new QueryClient();
@@ -19,6 +21,8 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<StoriesPage />} />
+          <Route path="/trash" element={<TrashPage />} />
+          <Route path="/stories/:id/trash" element={<StoryTrashPage />} />
           <Route path="/stories/new" element={<StoryFormPage />} />
           <Route path="/stories/:id" element={<StoryPage />} />
           <Route path="/stories/:id/edit" element={<StoryFormPage />} />

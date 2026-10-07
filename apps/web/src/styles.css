@@ -166,6 +166,11 @@ button.chip.on { background: var(--accent); border-color: var(--accent); color: 
 .story-title { font-weight: 600; font-size: 1.05rem; }
 .story-desc { margin: 4px 0; white-space: pre-wrap; }
 
+/* ---------- lixeira ---------- */
+
+.trash-section { margin: 24px 0 8px; }
+.trash-item .story-title { color: var(--text); }
+
 /* ---------- eventos: timeline + lista ---------- */
 
 .story-body.vertical {

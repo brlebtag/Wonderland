@@ -9,9 +9,14 @@ export function StoriesPage() {
     <main className="container">
       <header className="page-header">
         <h1>Histórias</h1>
-        <Link className="button" to="/stories/new">
-          + Nova história
-        </Link>
+        <div className="actions">
+          <Link className="button ghost" to="/trash">
+            Lixeira
+          </Link>
+          <Link className="button" to="/stories/new">
+            + Nova história
+          </Link>
+        </div>
       </header>
 
       {stories.isLoading && <p className="muted">Carregando…</p>}

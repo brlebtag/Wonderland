@@ -22,8 +22,19 @@ export const storyService = {
     await repo.softDelete(id);
   },
   async restore(id: string) {
-    const story = await repo.findDeletedById(id);
-    if (!story) throw new NotFoundError('Deleted story not found');
+    await getDeleted(id);
     return repo.restore(id);
   },
+  listDeleted: () => repo.listDeleted(),
+  // Só remove de vez o que já está na lixeira.
+  async purge(id: string) {
+    await getDeleted(id);
+    await repo.purge(id);
+  },
 };
+
+async function getDeleted(id: string) {
+  const story = await repo.findDeletedById(id);
+  if (!story) throw new NotFoundError('Story not in trash');
+  return story;
+}

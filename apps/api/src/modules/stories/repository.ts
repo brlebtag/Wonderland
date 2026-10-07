@@ -14,4 +14,19 @@ export const storyRepository = {
   softDelete: (id: string) =>
     prisma.story.update({ where: { id }, data: { deletedAt: new Date() } }),
   restore: (id: string) => prisma.story.update({ where: { id }, data: { deletedAt: null } }),
+
+  // ---------- lixeira ----------
+  listDeleted: () =>
+    prisma.story.findMany({
+      where: { deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
+      include: { _count: { select: { events: true, characters: true } } },
+    }),
+  /** Remove de vez a história com todos os seus eventos e personagens (os vínculos caem em cascata). */
+  purge: (id: string) =>
+    prisma.$transaction([
+      prisma.event.deleteMany({ where: { storyId: id } }),
+      prisma.character.deleteMany({ where: { storyId: id } }),
+      prisma.story.delete({ where: { id } }),
+    ]),
 };
