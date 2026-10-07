@@ -1,0 +1,22 @@
+{
+  "name": "wonderland",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev -w @wonderland/api\" \"npm run dev -w @wonderland/web\"",
+    "test": "npm test -w @wonderland/api && npm test -w @wonderland/web",
+    "typecheck": "npm run typecheck -w @wonderland/api && npm run typecheck -w @wonderland/web",
+    "db:migrate": "npm run db:migrate -w @wonderland/api",
+    "build": "npm run build -w @wonderland/web"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  },
+  "engines": {
+    "node": "^22.12.0 || >=24.0.0"
+  }
+}

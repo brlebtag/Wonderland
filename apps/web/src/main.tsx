@@ -1,0 +1,35 @@
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Route, Routes } from 'react-router';
+import { CharacterFormPage } from './pages/CharacterFormPage';
+import { CharacterPage } from './pages/CharacterPage';
+import { CharactersPage } from './pages/CharactersPage';
+import { EventFormPage } from './pages/EventFormPage';
+import { StoriesPage } from './pages/StoriesPage';
+import { StoryFormPage } from './pages/StoryFormPage';
+import { StoryPage } from './pages/StoryPage';
+import './styles.css';
+
+const queryClient = new QueryClient();
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<StoriesPage />} />
+          <Route path="/stories/new" element={<StoryFormPage />} />
+          <Route path="/stories/:id" element={<StoryPage />} />
+          <Route path="/stories/:id/edit" element={<StoryFormPage />} />
+          <Route path="/stories/:id/events/new" element={<EventFormPage />} />
+          <Route path="/stories/:id/events/:eventId/edit" element={<EventFormPage />} />
+          <Route path="/stories/:id/characters" element={<CharactersPage />} />
+          <Route path="/stories/:id/characters/new" element={<CharacterFormPage />} />
+          <Route path="/stories/:id/characters/:characterId" element={<CharacterPage />} />
+          <Route path="/stories/:id/characters/:characterId/edit" element={<CharacterFormPage />} />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  </StrictMode>,
+);
