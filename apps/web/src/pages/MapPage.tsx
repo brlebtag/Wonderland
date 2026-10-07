@@ -14,7 +14,7 @@ import {
 } from '../api';
 import { StoryHeader } from '../components/StoryHeader';
 import { CHARACTER_PALETTE, fromData } from '../map/mapDoc';
-import { MapView, type RegionColorMode } from '../map/MapView';
+import { MapView, NO_ETHNICITY_COLOR, parseColorMode, type RegionColorMode } from '../map/MapView';
 import { useStoredState } from '../storage';
 import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
 import { useMapNavigation } from '../map/useMapNavigation';
@@ -104,7 +104,7 @@ function MapTimeline({
     setZoom: setZoomPref,
     shouldPan: (e) => e.button === 0 || e.button === 1,
   });
-  const [colorMode, setColorMode] = useState<RegionColorMode>('ethnicity');
+  const [colorMode, setColorMode] = useStoredState<RegionColorMode>('wonderland.regionColorMode', 'region', parseColorMode);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [showTrails, setShowTrails] = useState(true);
 
@@ -205,8 +205,8 @@ function MapTimeline({
           <label className="inline">
             Regiões por
             <select value={colorMode} onChange={(e) => setColorMode(e.target.value as RegionColorMode)}>
-              <option value="ethnicity">etnia</option>
               <option value="region">cor da região</option>
+              <option value="ethnicity">etnia</option>
             </select>
           </label>
           <ZoomSelect value={zoomPref} onChange={setZoomPref} />
@@ -336,6 +336,27 @@ function MapTimeline({
         </div>
 
         <aside className="map-sidebar">
+          {colorMode === 'ethnicity' && (
+            <section className="card">
+              <h3>Legenda (regiões por etnia)</h3>
+              <ul className="legend">
+                {ethnicities
+                  .filter((e) => data.regions.some((r) => r.ethnicityId === e.id))
+                  .map((e) => (
+                    <li key={e.id} className="ethnicity-title">
+                      <span className="swatch" style={{ background: e.color }} />
+                      {e.name}
+                    </li>
+                  ))}
+                {data.regions.some((r) => !r.ethnicityId || !ethnicities.some((e) => e.id === r.ethnicityId)) && (
+                  <li className="ethnicity-title">
+                    <span className="swatch" style={{ background: NO_ETHNICITY_COLOR }} />
+                    <span className="muted">sem etnia</span>
+                  </li>
+                )}
+              </ul>
+            </section>
+          )}
           <section className="card">
             <div className="page-header compact">
               <h3>Personagens</h3>

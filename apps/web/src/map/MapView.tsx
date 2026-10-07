@@ -9,6 +9,10 @@ export const CELL_PX = 4;
 
 export type MapSelection = { kind: 'feature' | 'path' | 'territory'; id: string };
 export type RegionColorMode = 'region' | 'ethnicity';
+export const parseColorMode = (raw: string): RegionColorMode | undefined =>
+  raw === 'region' || raw === 'ethnicity' ? raw : undefined;
+/** No modo "por etnia", regiões sem etnia (ou com etnia na lixeira) ficam cinza — nunca em branco. */
+export const NO_ETHNICITY_COLOR = '#9a9a9a';
 
 type Props = {
   map: EditableMap;
@@ -60,7 +64,7 @@ export function MapView({
     for (const r of map.regions) {
       const color =
         regionColorMode === 'ethnicity'
-          ? r.ethnicityId && ethnicityColor.get(r.ethnicityId)
+          ? (r.ethnicityId && ethnicityColor.get(r.ethnicityId)) || NO_ETHNICITY_COLOR
           : r.color;
       if (color) colors.set(r.code, color);
     }

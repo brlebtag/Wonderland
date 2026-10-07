@@ -13,7 +13,7 @@ import {
 } from '@wonderland/shared';
 import { useEthnicities, useMap, useSaveMap, useStory, type Ethnicity } from '../api';
 import { cloneMap, fromData, newId, REGION_PALETTE, toData, type EditableMap } from '../map/mapDoc';
-import { MapView, type MapSelection, type RegionColorMode } from '../map/MapView';
+import { MapView, parseColorMode, type MapSelection, type RegionColorMode } from '../map/MapView';
 import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
 import { useMapNavigation } from '../map/useMapNavigation';
 import { ZoomSelect } from '../map/ZoomSelect';
@@ -173,7 +173,7 @@ function MapEditor({
     setZoom: setZoomPref,
     shouldPan: (e) => e.button === 1 || (e.button === 0 && (spaceDown || tool === 'pan')),
   });
-  const [colorMode, setColorMode] = useState<RegionColorMode>('region');
+  const [colorMode, setColorMode] = useStoredState<RegionColorMode>('wonderland.regionColorMode', 'region', parseColorMode);
 
   const [selected, setSelected] = useState<MapSelection | null>(null);
   const [draft, setDraft] = useState<Point[]>([]);
