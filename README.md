@@ -18,7 +18,12 @@ consistência da narrativa.
   personalidade, passado, relacionamentos, trabalho, habilidades, gostos, sobrenatural).
   - Vinculados a eventos (muitos-para-muitos); a página do personagem mostra a timeline só dos eventos dele.
   - Personagens podem ser criados direto do formulário de evento, só com o nome.
-  - Com data de nascimento preenchida, mostra a idade nos "dias atuais" da história.
+  - Com data de nascimento preenchida, mostra a idade nos "dias atuais" da história; com data de
+    falecimento, mostra "faleceu aos N anos" (e o personagem sai do mapa depois dessa data).
+  - **Família**: vincule outros personagens como pai/mãe, filho/filha, avô/avó, irmão/irmã, tio/tia,
+    primo/prima, cônjuge, padrasto/madrasta, sogro/sogra, cunhado/cunhada, padrinho/madrinha...
+    Cada vínculo aparece nas duas fichas, com o papel invertido (pai ↔ filha) e no gênero do parente.
+  - Campos de **objetivos, desejos e trivialidades**.
 
 - **Etnias** — nações, reinos, povos, tribos... com tipo, cor e descrição. Cada personagem pode ser
   vinculado a uma etnia; no mapa, regiões e territórios também.
@@ -142,6 +147,7 @@ apagados. Uma história na lixeira esconde seus eventos e personagens; ao restau
 ### Modelo de dados
 
 ```
+                          Character *───* Character (CharacterRelation: parentesco)
 Story 1───* Event *───* Character *───0..1 Ethnicity
   │            │
   │            └── location → { kind, id } de um elemento do mapa
@@ -151,6 +157,8 @@ Story 1───* Event *───* Character *───0..1 Ethnicity
 - `Story`: `title`, `description`
 - `Event`: `title`, `description`, `date` (ordenação da timeline), `locationKind` + `locationId`
 - `Character`: `name`, `nickname`, `attributes` (JSON com a ficha), `ethnicityId`
+- `CharacterRelation`: `characterId`, `relatedId`, `role` — "related é role de character", um
+  registro por par; o outro lado usa o papel inverso (`packages/shared/src/familyRoles.ts`)
 - `Ethnicity`: `name`, `kind`, `color`, `description`
 - `StoryMap`: `data` (JSON, um documento por história)
 - Todos (menos o mapa): `createdAt`, `updatedAt`, `deletedAt`
@@ -213,6 +221,8 @@ Erros de validação respondem `400`; registros inexistentes ou na lixeira, `404
 | PATCH | `/characters/:id` | Atualiza (`attributes` substitui a ficha inteira) |
 | DELETE | `/characters/:id` | Lixeira (some dos eventos; o vínculo é mantido) |
 | GET | `/characters/:id/events` | Eventos do personagem |
+| GET | `/characters/:id/relations` | Parentescos do ponto de vista do personagem: `[{ role, other: { id, name, sex } }]` |
+| PUT | `/characters/:id/relations` | Substitui os parentescos: `{ relations: [{ otherId, role }] }` |
 | GET | `/stories/:id/ethnicities` | Etnias da história |
 | POST | `/stories/:id/ethnicities` | Cria `{ name, kind?, color?, description? }` |
 | GET · PATCH · DELETE | `/ethnicities/:id` | Detalhe, atualiza, lixeira |

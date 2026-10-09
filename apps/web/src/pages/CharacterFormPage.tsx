@@ -1,5 +1,13 @@
 import { useNavigate, useParams } from 'react-router';
-import { useCharacter, useCreateCharacter, useEthnicities, useUpdateCharacter } from '../api';
+import {
+  useCharacter,
+  useCharacterRelations,
+  useCharacters,
+  useCreateCharacter,
+  useEthnicities,
+  useSaveRelations,
+  useUpdateCharacter,
+} from '../api';
 import { CharacterForm } from '../components/CharacterForm';
 import { useGoBack } from '../navigation';
 
@@ -9,6 +17,9 @@ export function CharacterFormPage() {
   const isNew = !characterId;
   const character = useCharacter(characterId);
   const ethnicities = useEthnicities(storyId);
+  const characters = useCharacters(storyId);
+  const relations = useCharacterRelations(characterId);
+  const saveRelations = useSaveRelations();
   const createCharacter = useCreateCharacter(storyId);
   const updateCharacter = useUpdateCharacter(storyId, characterId ?? '');
   const navigate = useNavigate();
@@ -16,7 +27,7 @@ export function CharacterFormPage() {
     characterId ? `/stories/${storyId}/characters/${characterId}` : `/stories/${storyId}/characters`,
   );
 
-  if (!isNew && character.isLoading) return <main className="container muted">Carregando…</main>;
+  if ((!isNew && (character.isLoading || relations.isLoading)) || characters.isLoading) return <main className="container muted">Carregando…</main>;
   if (!isNew && !character.data) {
     return (
       <main className="container">
@@ -43,13 +54,17 @@ export function CharacterFormPage() {
             }
           }
           ethnicities={ethnicities.data ?? []}
+          relatives={(characters.data ?? []).filter((x) => x.id !== characterId)}
+          initialRelations={relations.data?.map((r) => ({ otherId: r.other.id, role: r.role }))}
           submitLabel={isNew ? 'Criar' : 'Salvar'}
-          onSubmit={async (input) => {
+          onSubmit={async (input, rels) => {
             if (isNew) {
               const created = await createCharacter.mutateAsync(input);
+              if (rels.length) await saveRelations.mutateAsync({ id: created.id, relations: rels });
               navigate(`/stories/${storyId}/characters/${created.id}`, { replace: true });
             } else {
               await updateCharacter.mutateAsync(input);
+              await saveRelations.mutateAsync({ id: characterId!, relations: rels });
               goBack();
             }
           }}

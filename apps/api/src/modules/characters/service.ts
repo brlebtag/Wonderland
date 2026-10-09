@@ -2,6 +2,7 @@ import { NotFoundError } from '../../errors';
 import { ethnicityService } from '../ethnicities/service';
 import { eventRepository } from '../events/repository';
 import { storyService } from '../stories/service';
+import { listRelations, replaceRelations, type RelationInput } from './relations';
 import { characterRepository as repo } from './repository';
 import type { CharacterCreate, CharacterUpdate } from './schemas';
 
@@ -31,6 +32,13 @@ export const characterService = {
   async remove(id: string) {
     await get(id);
     await repo.softDelete(id);
+  },
+  async listRelations(id: string) {
+    await get(id);
+    return listRelations(id);
+  },
+  async replaceRelations(id: string, relations: RelationInput[]) {
+    return replaceRelations(await get(id), relations);
   },
   async listEvents(id: string) {
     await get(id);

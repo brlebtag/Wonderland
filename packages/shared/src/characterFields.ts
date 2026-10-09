@@ -132,6 +132,7 @@ export const characterFieldGroups: FieldGroup[] = [
         options: [o('female', 'Feminino'), o('male', 'Masculino'), o('intersex', 'Intersexo'), o('other', 'Outro')],
       },
       { key: 'birthDate', label: 'Data de nascimento', type: 'date' },
+      { key: 'deathDate', label: 'Data de falecimento', type: 'date' },
       text('birthPlace', 'Lugar de nascimento'),
       text('birthSigns', 'Sinais de nascimento'),
       text('religion', 'Religião'),
@@ -211,6 +212,15 @@ export const characterFieldGroups: FieldGroup[] = [
       long('fears', 'Medos'),
       long('habits', 'Hábitos'),
       long('favoriteProverbs', 'Provérbios favoritos'),
+    ],
+  },
+  {
+    key: 'goals',
+    label: 'Objetivos e curiosidades',
+    fields: [
+      long('goals', 'Objetivos'),
+      long('desires', 'Desejos'),
+      long('trivia', 'Trivialidades'),
     ],
   },
   {

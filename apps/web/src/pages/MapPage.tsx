@@ -76,7 +76,16 @@ export function MapPage() {
   );
 }
 
-type Track = { character: Character; color: string; stops: Stop[] };
+type Track = {
+  character: Character;
+  color: string;
+  stops: Stop[];
+  /** Dia do falecimento: depois dele o personagem sai do mapa. */
+  deathDay?: number;
+};
+
+const deathDayOf = (c: Character) =>
+  typeof c.attributes.deathDate === 'string' ? toDay(`${c.attributes.deathDate}T00:00:00.000Z`) : undefined;
 
 function MapTimeline({
   storyId,
@@ -115,6 +124,7 @@ function MapTimeline({
         .map((character, i) => ({
           character,
           color: CHARACTER_PALETTE[i % CHARACTER_PALETTE.length],
+          deathDay: deathDayOf(character),
           stops: events.flatMap((e) => {
             const loc = e.locationId ? locations.get(e.locationId) : undefined;
             return loc && e.characters.some((c) => c.id === character.id)
@@ -168,7 +178,7 @@ function MapTimeline({
 
   // ---------- posições (personagens no mesmo ponto são espalhados em volta dele) ----------
   const positions = tracks
-    .filter((tr) => !hidden.has(tr.character.id))
+    .filter((tr) => !hidden.has(tr.character.id) && !(tr.deathDay !== undefined && t > tr.deathDay))
     .flatMap((tr) => {
       const pos = positionAt(tr.stops, t);
       return pos ? [{ ...tr, pos }] : [];
@@ -189,6 +199,7 @@ function MapTimeline({
 
   const locationName = (e: StoryEvent) => (e.locationId ? locations.get(e.locationId)?.name : undefined);
   const statusOf = (tr: Track) => {
+    if (tr.deathDay !== undefined && t > tr.deathDay) return `✝ faleceu em ${formatDate(dayToIso(tr.deathDay))}`;
     const pos = positionAt(tr.stops, t);
     if (!pos) return 'ainda não apareceu';
     const here = (id: string) => locations.get(events.find((e) => e.id === id)?.locationId ?? '')?.name;

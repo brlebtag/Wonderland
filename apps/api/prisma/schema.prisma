@@ -53,8 +53,26 @@ model Character {
   updatedAt   DateTime   @updatedAt
   deletedAt   DateTime?
   events      Event[]
+  // parentescos: "related é <role> de character" (um registro por par)
+  relationsFrom CharacterRelation[] @relation("relationFrom")
+  relationsTo   CharacterRelation[] @relation("relationTo")
 
   @@index([storyId])
+}
+
+/// Parentesco entre dois personagens: `related` é `role` de `character`.
+/// Papéis em packages/shared/src/familyRoles.ts; o outro lado usa o papel inverso.
+model CharacterRelation {
+  id          String    @id @default(cuid())
+  characterId String
+  character   Character @relation("relationFrom", fields: [characterId], references: [id], onDelete: Cascade)
+  relatedId   String
+  related     Character @relation("relationTo", fields: [relatedId], references: [id], onDelete: Cascade)
+  role        String
+  createdAt   DateTime  @default(now())
+
+  @@unique([characterId, relatedId])
+  @@index([relatedId])
 }
 
 model Event {

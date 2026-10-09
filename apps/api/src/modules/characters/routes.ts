@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { idParams } from '../stories/schemas';
 import { characterCreate, characterUpdate } from './schemas';
+import { relationsUpdate } from './relations';
 import { characterService } from './service';
 
 export async function characterRoutes(app: FastifyInstance) {
@@ -35,6 +36,18 @@ export async function characterRoutes(app: FastifyInstance) {
     await characterService.purge(idParams.parse(req.params).id);
     return reply.status(204).send();
   });
+
+  /** Parentescos do ponto de vista do personagem: [{ role, other: { id, name, sex } }]. */
+  app.get('/characters/:id/relations', (req) =>
+    characterService.listRelations(idParams.parse(req.params).id),
+  );
+
+  app.put('/characters/:id/relations', (req) =>
+    characterService.replaceRelations(
+      idParams.parse(req.params).id,
+      relationsUpdate.parse(req.body).relations,
+    ),
+  );
 
   app.get('/characters/:id/events', (req) =>
     characterService.listEvents(idParams.parse(req.params).id),

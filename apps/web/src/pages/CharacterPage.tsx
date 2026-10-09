@@ -1,7 +1,10 @@
 import { Link, useNavigate, useParams } from 'react-router';
+import { familyRoleLabel } from '@wonderland/shared';
 import {
+  formatDate,
   useCharacter,
   useCharacterEvents,
+  useCharacterRelations,
   useDeleteCharacter,
   useEthnicities,
   useEvents,
@@ -18,6 +21,7 @@ export function CharacterPage() {
   const storyEvents = useEvents(storyId);
   const deleteCharacter = useDeleteCharacter(storyId);
   const ethnicities = useEthnicities(storyId);
+  const relations = useCharacterRelations(characterId);
   const navigate = useNavigate();
 
   if (character.isLoading) return <main className="container muted">Carregando…</main>;
@@ -33,6 +37,9 @@ export function CharacterPage() {
   const c = character.data;
   const presentDate = storyEvents.data?.at(-1)?.date;
   const birthDate = c.attributes.birthDate as string | undefined;
+  const deathDate = c.attributes.deathDate as string | undefined;
+  // morreu até os "dias atuais" da história (sem eventos, vale a data de falecimento informada)
+  const dead = deathDate && (!presentDate || deathDate <= presentDate.slice(0, 10));
   const groups = filledGroups(c.attributes);
   const ethnicity = ethnicities.data?.find((e) => e.id === c.ethnicityId);
 
@@ -53,8 +60,24 @@ export function CharacterPage() {
               {ethnicity.kind && <span className="muted"> · {ethnicity.kind}</span>}
             </p>
           )}
-          {birthDate && presentDate && (
-            <p className="muted">Idade nos dias atuais: {ageAt(birthDate, presentDate)} anos</p>
+          {dead ? (
+            <p className="muted">
+              ✝ Faleceu em {formatDate(`${deathDate}T00:00:00.000Z`)}
+              {birthDate && ` aos ${ageAt(birthDate, deathDate)} anos`}
+            </p>
+          ) : (
+            birthDate &&
+            presentDate && <p className="muted">Idade nos dias atuais: {ageAt(birthDate, presentDate)} anos</p>
+          )}
+          {relations.data && relations.data.length > 0 && (
+            <ul className="family-list">
+              {relations.data.map((r) => (
+                <li key={r.other.id}>
+                  <span className="muted">{familyRoleLabel(r.role, r.other.sex)}:</span>{' '}
+                  <Link to={`/stories/${storyId}/characters/${r.other.id}`}>{r.other.name}</Link>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
         <div className="actions">

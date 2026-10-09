@@ -60,6 +60,9 @@ export type CharacterInput = {
   attributes: CharacterAttributes;
   ethnicityId: string | null;
 };
+/** Parentesco visto pela ficha de um personagem: "other é role deste personagem". */
+export type FamilyRelation = { role: string; other: { id: string; name: string; sex: string | null } };
+export type RelationInput = { otherId: string; role: string };
 export type EthnicityInput = { name: string; kind: string; color: string; description: string };
 export type StoryMapResponse = { data: MapData | null; updatedAt: string | null };
 
@@ -83,6 +86,7 @@ const keys = {
   allCharacters: ['characters'] as const,
   character: (id: string) => ['characters', id] as const,
   characterEvents: (id: string) => ['characters', id, 'events'] as const,
+  characterRelations: (id: string) => ['characters', id, 'relations'] as const,
   storyTrash: (storyId: string) => ['stories', storyId, 'trash'] as const,
   ethnicities: (storyId: string) => ['stories', storyId, 'ethnicities'] as const,
   ethnicity: (id: string) => ['ethnicities', id] as const,
@@ -205,6 +209,23 @@ function useInvalidateCharacters(storyId: string) {
       qc.invalidateQueries({ queryKey: keys.story(storyId) }),
       qc.invalidateQueries({ queryKey: keys.allCharacters }),
     ]);
+}
+
+export const useCharacterRelations = (id: string | undefined) =>
+  useQuery({
+    queryKey: keys.characterRelations(id ?? ''),
+    queryFn: () => request<FamilyRelation[]>(`/characters/${id}/relations`),
+    enabled: !!id,
+  });
+
+/** Um parentesco aparece nas duas fichas: recarrega os parentescos de todos. */
+export function useSaveRelations() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, relations }: { id: string; relations: RelationInput[] }) =>
+      request<FamilyRelation[]>(`/characters/${id}/relations`, 'PUT', { relations }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.allCharacters }),
+  });
 }
 
 export function useCreateCharacter(storyId: string) {

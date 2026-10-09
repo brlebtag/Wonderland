@@ -5,8 +5,9 @@ import {
   type CharacterAttributes,
   type CharacterField,
 } from '@wonderland/shared';
-import type { CharacterInput, Ethnicity } from '../api';
+import type { CharacterInput, CharacterRef, Ethnicity, RelationInput } from '../api';
 import { ChipSelect } from './ChipSelect';
+import { FamilyEditor } from './FamilyEditor';
 
 type Draft = Record<string, unknown>;
 
@@ -14,8 +15,11 @@ type Props = {
   initial?: CharacterInput;
   /** Etnias da história para o vínculo do personagem. */
   ethnicities: Ethnicity[];
+  /** Outros personagens da história (candidatos a parente). */
+  relatives: CharacterRef[];
+  initialRelations?: RelationInput[];
   submitLabel: string;
-  onSubmit: (input: CharacterInput) => Promise<unknown>;
+  onSubmit: (input: CharacterInput, relations: RelationInput[]) => Promise<unknown>;
   onCancel: () => void;
 };
 
@@ -77,11 +81,20 @@ function FieldInput({
 const isFilled = (v: unknown) =>
   v !== undefined && v !== '' && !(Array.isArray(v) && v.length === 0);
 
-export function CharacterForm({ initial, ethnicities, submitLabel, onSubmit, onCancel }: Props) {
+export function CharacterForm({
+  initial,
+  ethnicities,
+  relatives,
+  initialRelations,
+  submitLabel,
+  onSubmit,
+  onCancel,
+}: Props) {
   const [name, setName] = useState(initial?.name ?? '');
   const [nickname, setNickname] = useState(initial?.nickname ?? '');
   const [ethnicityId, setEthnicityId] = useState(initial?.ethnicityId ?? '');
   const [attrs, setAttrs] = useState<Draft>(initial?.attributes ?? {});
+  const [relations, setRelations] = useState<RelationInput[]>(initialRelations ?? []);
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
 
@@ -97,7 +110,7 @@ export function CharacterForm({ initial, ethnicities, submitLabel, onSubmit, onC
         nickname,
         ethnicityId: ethnicityId || null,
         attributes: cleanAttributes(attrs) as CharacterAttributes,
-      });
+      }, relations.filter((r) => r.otherId));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -133,6 +146,14 @@ export function CharacterForm({ initial, ethnicities, submitLabel, onSubmit, onC
           </select>
         </label>
       </div>
+
+      <details className="field-group" open={relations.length > 0}>
+        <summary>
+          Família (parentes vinculados)
+          {relations.length > 0 && <span className="muted"> · {relations.length}</span>}
+        </summary>
+        <FamilyEditor characterName={name} candidates={relatives} value={relations} onChange={setRelations} />
+      </details>
 
       {characterFieldGroups.map((group, i) => {
         const filled = group.fields.filter((f) => isFilled(attrs[f.key])).length;
