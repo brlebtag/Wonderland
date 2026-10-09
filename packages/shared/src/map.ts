@@ -23,7 +23,9 @@ export const LAKE = 2;
 export const FEATURE_TYPES = [
   { value: 'city', label: 'Cidade', icon: '🏛️' },
   { value: 'village', label: 'Vilarejo', icon: '🏘️' },
+  { value: 'tribe', label: 'Tribo (indígena)', icon: '🛖' },
   { value: 'castle', label: 'Castelo', icon: '🏰' },
+  { value: 'military-base', label: 'Base militar', icon: '🪖' },
   { value: 'port', label: 'Porto', icon: '⚓' },
   { value: 'temple', label: 'Templo', icon: '🛕' },
   { value: 'ruin', label: 'Ruína', icon: '🏚️' },
@@ -32,6 +34,8 @@ export const FEATURE_TYPES = [
   // desenhada como um grupo de montanhas (não é emoji)
   { value: 'range', label: 'Cordilheira', icon: '' },
   { value: 'forest', label: 'Floresta', icon: '🌲' },
+  { value: 'desert', label: 'Deserto', icon: '🏜️' },
+  { value: 'polar-desert', label: 'Deserto polar', icon: '🧊' },
   { value: 'cave', label: 'Caverna', icon: '🕳️' },
   { value: 'landmark', label: 'Local', icon: '📍' },
   { value: 'label', label: 'Rótulo (só texto)', icon: '' },
