@@ -2,8 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import type { LocationKind, MapLocation } from '@wonderland/shared';
 import type { CharacterRef, EventInput } from '../api';
-import { groupLocations } from '../mapLocations';
 import { CharacterPicker } from './CharacterPicker';
+import { LocationPicker } from './LocationPicker';
 
 type Props = {
   initial?: Partial<EventInput>;
@@ -77,27 +77,16 @@ export function EventForm({
         Descrição
         <textarea rows={6} value={description} onChange={(e) => setDescription(e.target.value)} />
       </label>
-      <label>
-        Local
+      <div className="field">
+        <span className="field-label">Local</span>
         {locations ? (
-          <select value={location} onChange={(e) => setLocation(e.target.value)}>
-            <option value="">— sem local —</option>
-            {groupLocations(locations).map(([group, items]) => (
-              <optgroup key={group} label={group}>
-                {items.map((l) => (
-                  <option key={l.id} value={`${l.kind}:${l.id}`}>
-                    {l.name}
-                  </option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
+          <LocationPicker locations={locations} value={location} onChange={setLocation} />
         ) : (
           <span className="muted">
             A história ainda não tem mapa. <Link to={mapHref}>Criar o mapa</Link>
           </span>
         )}
-      </label>
+      </div>
       <div className="field">
         <span className="field-label">Personagens que aparecem no evento</span>
         <CharacterPicker

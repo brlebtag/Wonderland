@@ -10,8 +10,8 @@ import {
 } from '@wonderland/shared';
 import type { CharacterInput, CharacterRef, Ethnicity, RelationInput } from '../api';
 import { ChipSelect } from './ChipSelect';
-import { groupLocations } from '../mapLocations';
 import { FamilyEditor } from './FamilyEditor';
+import { LocationPicker } from './LocationPicker';
 
 type Draft = Record<string, unknown>;
 
@@ -161,27 +161,16 @@ export function CharacterForm({
             )}
           </select>
         </label>
-        <label className="grow">
-          Local de nascimento
+        <div className="field grow">
+          <span className="field-label">Local de nascimento</span>
           {locations ? (
-            <select value={birthLocation} onChange={(e) => setBirthLocation(e.target.value)}>
-              <option value="">— não informado —</option>
-              {groupLocations(locations).map(([group, items]) => (
-                <optgroup key={group} label={group}>
-                  {items.map((l) => (
-                    <option key={l.id} value={`${l.kind}:${l.id}`}>
-                      {l.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            <LocationPicker locations={locations} value={birthLocation} onChange={setBirthLocation} />
           ) : (
             <span className="muted">
               A história ainda não tem mapa. <Link to={mapHref}>Criar o mapa</Link>
             </span>
           )}
-        </label>
+        </div>
       </div>
 
       <details className="field-group" open={relations.length > 0}>

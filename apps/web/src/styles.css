@@ -533,3 +533,37 @@ label.inline.check { color: var(--text); margin-top: 4px; }
   color: var(--accent);
   font-weight: 600;
 }
+
+/* busca de lugar (combobox) */
+.combo { position: relative; display: flex; flex-direction: column; gap: 2px; }
+.combo-input { display: flex; gap: 6px; }
+.combo-input input { flex: 1; min-width: 0; }
+.combo-list {
+  position: absolute;
+  z-index: 20;
+  top: 40px;
+  left: 0;
+  right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+}
+.combo-option {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.combo-option.active { background: var(--accent-soft); }
+.combo-option.selected span:first-child { font-weight: 700; }
+.combo-empty { padding: 6px 10px; }
