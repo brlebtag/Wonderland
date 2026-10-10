@@ -37,6 +37,7 @@ export const FEATURE_TYPES = [
   { value: 'desert', label: 'Deserto', icon: '🏜️' },
   { value: 'polar-desert', label: 'Deserto polar', icon: '🧊' },
   { value: 'cave', label: 'Caverna', icon: '🕳️' },
+  { value: 'mine', label: 'Mina', icon: '⛏️' },
   { value: 'landmark', label: 'Local', icon: '📍' },
   { value: 'label', label: 'Rótulo (só texto)', icon: '' },
 ] as const;
