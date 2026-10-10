@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ageAt, formatDuration, formatSincePresent, layoutTimeline } from './timelineLayout';
+import {
+  ageAt,
+  formatAge,
+  formatDuration,
+  formatSincePresent,
+  layoutTimeline,
+  lifeMoment,
+} from './timelineLayout';
 
 const opts = { pxPerLogDay: 40, clusterPx: 20, labelMinPx: 100, gapLabelMinPx: 60 };
 const ev = (id: string, date: string) => ({ id, date: `${date}T00:00:00.000Z` });
@@ -54,6 +61,26 @@ describe('ageAt', () => {
   it('conta anos completos, respeitando o aniversário', () => {
     expect(ageAt('1987-06-01', '2024-06-01')).toBe(37);
     expect(ageAt('1987-06-02', '2024-06-01T00:00:00.000Z')).toBe(36);
+  });
+});
+
+describe('idade em cada evento', () => {
+  it('formata em anos, meses ou dias', () => {
+    expect(formatAge('2000-01-10', '2012-03-01T00:00:00.000Z')).toBe('12 anos');
+    expect(formatAge('2000-01-10', '2001-01-10')).toBe('1 ano');
+    expect(formatAge('2000-01-10', '2000-06-20')).toBe('5 meses');
+    expect(formatAge('2000-01-10', '2000-01-15')).toBe('5 dias');
+  });
+
+  it('marca nascimento, antes de nascer, falecimento e depois', () => {
+    const birth = '2000-01-10';
+    const death = '2060-05-01';
+    expect(lifeMoment('2000-01-10T00:00:00.000Z', birth, death)).toBe('nascimento');
+    expect(lifeMoment('1999-12-31T00:00:00.000Z', birth, death)).toBe('antes de nascer');
+    expect(lifeMoment('2030-01-10T00:00:00.000Z', birth, death)).toBe('30 anos');
+    expect(lifeMoment('2060-05-01T00:00:00.000Z', birth, death)).toBe('falecimento (60 anos)');
+    expect(lifeMoment('2061-01-01T00:00:00.000Z', birth, death)).toBe('após o falecimento');
+    expect(lifeMoment('2030-01-10T00:00:00.000Z', undefined)).toBeUndefined();
   });
 });
 

@@ -4,24 +4,29 @@ import {
   useCharacters,
   useDeleteCharacter,
   useEthnicities,
+  useEvents,
   useStory,
   type Character,
   type Ethnicity,
 } from '../api';
 import { formatAttribute } from '../characterDisplay';
+import { LifeBadge, lifeSummary } from '../components/LifeStatus';
 import { StoryHeader } from '../components/StoryHeader';
+import { useMapLocations } from '../mapLocations';
 
-const SUMMARY_KEYS = ['sex', 'age', 'birthPlace'];
-
-/** Linha curta com etnia e alguns dados da ficha (ex.: "Reino de Copas · Feminino · 7 anos"). */
-function summary(character: Character, ethnicities: Ethnicity[]) {
+/** Linha curta: etnia, sexo, idade calculada e local de nascimento. */
+function summary(character: Character, ethnicities: Ethnicity[], presentDate?: string, birthPlace?: string) {
   const ethnicity = ethnicities.find((e) => e.id === character.ethnicityId)?.name;
-  const fields = SUMMARY_KEYS.flatMap((key) => {
-    const field = characterFields.find((f) => f.key === key)!;
-    const value = character.attributes[key];
-    return value === undefined ? [] : [formatAttribute(field, value)];
-  });
-  return [ethnicity, ...fields].filter(Boolean).join(' · ');
+  const sexField = characterFields.find((f) => f.key === 'sex')!;
+  const sex = character.attributes.sex;
+  return [
+    ethnicity,
+    sex !== undefined && formatAttribute(sexField, sex),
+    lifeSummary(character, presentDate),
+    birthPlace && `nasceu em ${birthPlace}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 export function CharactersPage() {
@@ -30,6 +35,16 @@ export function CharactersPage() {
   const characters = useCharacters(id);
   const deleteCharacter = useDeleteCharacter(id);
   const ethnicities = useEthnicities(id);
+  const events = useEvents(id);
+  const map = useMapLocations(id);
+  const presentDate = events.data?.at(-1)?.date;
+  const summaryOf = (c: Character) =>
+    summary(
+      c,
+      ethnicities.data ?? [],
+      presentDate,
+      c.birthLocationId ? map.byId.get(c.birthLocationId)?.name : undefined,
+    );
 
   if (story.isLoading) return <main className="container muted">Carregando…</main>;
   if (!story.data) {
@@ -61,10 +76,8 @@ export function CharactersPage() {
               <Link to={`/stories/${id}/characters/${c.id}`} className="story-title">
                 {c.name}
               </Link>
-              {c.nickname && <span className="muted"> “{c.nickname}”</span>}
-              {summary(c, ethnicities.data ?? []) && (
-                <div className="muted">{summary(c, ethnicities.data ?? [])}</div>
-              )}
+              {c.nickname && <span className="muted"> “{c.nickname}”</span>} <LifeBadge character={c} />
+              {summaryOf(c) && <div className="muted">{summaryOf(c)}</div>}
             </div>
             <div className="actions">
               <Link className="button ghost" to={`/stories/${id}/characters/${c.id}/edit`}>

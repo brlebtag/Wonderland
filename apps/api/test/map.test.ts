@@ -158,6 +158,30 @@ describe('local dos eventos', () => {
     expect(cleared.locationKind).toBeNull();
   });
 
+  it('local de nascimento do personagem segue as mesmas regras', async () => {
+    const story = await createStory();
+    await ok('PUT', `/api/stories/${story.id}/map`, { data: sampleMap() });
+
+    const c = await ok('POST', `/api/stories/${story.id}/characters`, {
+      name: 'Rei',
+      birthLocation: { kind: 'feature', id: 'f-capital' },
+      // campos removidos da ficha são descartados
+      attributes: { age: 40, birthPlace: 'Capital', hairColor: 'ruivo' },
+    });
+    expect(c).toMatchObject({ birthLocationKind: 'feature', birthLocationId: 'f-capital' });
+    expect(c.attributes).toEqual({ hairColor: 'ruivo' });
+
+    const bad = await req('PATCH', `/api/characters/${c.id}`, {
+      birthLocation: { kind: 'feature', id: 'nao-existe' },
+    });
+    expect(bad.statusCode).toBe(400);
+
+    // remover a cidade do mapa tira o local de nascimento
+    const saved = await ok('PUT', `/api/stories/${story.id}/map`, { data: { ...sampleMap(), features: [] } });
+    expect(saved.clearedCharacters).toBe(1);
+    expect((await req('GET', `/api/characters/${c.id}`)).json().birthLocationId).toBeNull();
+  });
+
   it('excluir a história de vez remove etnias e mapa', async () => {
     const story = await createStory();
     await ok('POST', `/api/stories/${story.id}/ethnicities`, { name: 'Reino' });

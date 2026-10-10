@@ -94,6 +94,35 @@ export function ageAt(birth: string, at: string) {
   return age;
 }
 
+const dayOnly = (d: string) => d.slice(0, 10);
+
+/** Idade por extenso entre duas datas: anos; abaixo de 1 ano, meses; abaixo de 1 mês, dias. */
+export function formatAge(birth: string, at: string) {
+  const years = ageAt(birth, at);
+  if (years >= 1) return years === 1 ? '1 ano' : `${years} anos`;
+  const days = Math.round(toDays(`${dayOnly(at)}T00:00:00Z`) - toDays(`${dayOnly(birth)}T00:00:00Z`));
+  if (days >= 31) {
+    const months = Math.floor(days / 30.44);
+    return months === 1 ? '1 mês' : `${months} meses`;
+  }
+  return days === 1 ? '1 dia' : `${days} dias`;
+}
+
+/**
+ * O que um evento representa na vida do personagem: "nascimento", a idade que ele tinha,
+ * "antes de nascer", "falecimento (N anos)" ou "após o falecimento".
+ * Sem data de nascimento não há o que dizer (undefined).
+ */
+export function lifeMoment(eventDate: string, birth?: string, death?: string) {
+  if (!birth) return undefined;
+  const day = dayOnly(eventDate);
+  if (day === dayOnly(birth)) return 'nascimento';
+  if (day < dayOnly(birth)) return 'antes de nascer';
+  if (death && day === dayOnly(death)) return `falecimento (${formatAge(birth, death)})`;
+  if (death && day > dayOnly(death)) return 'após o falecimento';
+  return formatAge(birth, eventDate);
+}
+
 export function formatDuration(days: number) {
   const d = Math.round(days);
   if (d < 31) return d === 1 ? '1 dia' : `${d} dias`;

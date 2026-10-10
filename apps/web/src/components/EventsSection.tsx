@@ -17,10 +17,19 @@ type Props = {
   presentDate?: string;
   newEventHref: string;
   title?: string;
+  /** Na página de um personagem: a idade dele em cada evento. */
+  lifeMomentOf?: (event: StoryEvent) => string | undefined;
 };
 
 /** Cabeçalho + timeline + lista de eventos. Usado na história e na página do personagem. */
-export function EventsSection({ storyId, events, presentDate, newEventHref, title = 'Eventos' }: Props) {
+export function EventsSection({
+  storyId,
+  events,
+  presentDate,
+  newEventHref,
+  title = 'Eventos',
+  lifeMomentOf,
+}: Props) {
   const navigate = useNavigate();
   const deleteEvent = useDeleteEvent(storyId);
   const map = useMapLocations(storyId);
@@ -56,6 +65,7 @@ export function EventsSection({ storyId, events, presentDate, newEventHref, titl
           highlightedIds={highlightedIds}
           presentDate={presentDate}
           locationName={locationName}
+          lifeMomentOf={lifeMomentOf}
           onOpenEvent={(e) => navigate(`/stories/${storyId}/events/${e.id}/edit`)}
           onSelectCluster={(evs) => setHighlightedIds(evs.map((e) => e.id))}
         />
@@ -64,6 +74,7 @@ export function EventsSection({ storyId, events, presentDate, newEventHref, titl
           highlightedIds={highlightedIds}
           presentDate={presentDate}
           locationName={locationName}
+          lifeMomentOf={lifeMomentOf}
           onHover={setHighlightedIds}
           onTrash={(e) => {
             if (confirm(`Mover o evento "${e.title}" para a lixeira?`)) deleteEvent.mutate(e.id);

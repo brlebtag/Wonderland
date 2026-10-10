@@ -31,6 +31,8 @@ export type Character = {
   nickname: string;
   attributes: CharacterAttributes;
   ethnicityId: string | null;
+  birthLocationKind: LocationKind | null;
+  birthLocationId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -59,6 +61,7 @@ export type CharacterInput = {
   nickname: string;
   attributes: CharacterAttributes;
   ethnicityId: string | null;
+  birthLocation: EventLocation | null;
 };
 /** Parentesco visto pela ficha de um personagem: "other é role deste personagem". */
 export type FamilyRelation = { role: string; other: { id: string; name: string; sex: string | null } };
@@ -365,7 +368,7 @@ export function useSaveMap(storyId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: MapData) =>
-      request<StoryMapResponse & { clearedEvents: number }>(`/stories/${storyId}/map`, 'PUT', { data }),
+      request<StoryMapResponse & { clearedEvents: number; clearedCharacters: number }>(`/stories/${storyId}/map`, 'PUT', { data }),
     onSuccess: () =>
       Promise.all([
         qc.invalidateQueries({ queryKey: keys.story(storyId) }),

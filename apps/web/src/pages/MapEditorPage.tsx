@@ -493,9 +493,13 @@ function MapEditor({
     try {
       const result = await save.mutateAsync(toData(doc));
       setDirty(false);
+      const cleared = [
+        result.clearedEvents > 0 && `${result.clearedEvents} evento(s) ficaram sem local`,
+        result.clearedCharacters > 0 && `${result.clearedCharacters} personagem(ns) ficaram sem local de nascimento`,
+      ].filter(Boolean);
       setMessage(
-        result.clearedEvents > 0
-          ? `Mapa salvo. ${result.clearedEvents} evento(s) ficaram sem local (o lugar foi removido do mapa).`
+        cleared.length
+          ? `Mapa salvo. ${cleared.join(' e ')} (o lugar foi removido do mapa).`
           : 'Mapa salvo.',
       );
     } catch (err) {

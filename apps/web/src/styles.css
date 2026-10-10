@@ -507,3 +507,29 @@ label.inline.check { color: var(--text); margin-top: 4px; }
 .family-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .family-row select { min-width: 160px; }
 .family-list { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+
+/* vivo / falecido */
+.life-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 6px 0; }
+.life-badge {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.life-badge.alive { background: #d9f2e0; color: #17683a; border: 1px solid #8fd3a6; }
+.life-badge.dead { background: #f7dcdc; color: #9c1f1f; border: 1px solid #e3a3a3; }
+@media (prefers-color-scheme: dark) {
+  .life-badge.alive { background: #163a25; color: #8fe3ae; border-color: #2c6b45; }
+  .life-badge.dead { background: #472020; color: #ffaaa5; border-color: #7c3a3a; }
+}
+/* idade do personagem em cada evento */
+.life-moment {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}

@@ -27,7 +27,7 @@ describe('characters', () => {
       name: 'Alice',
       nickname: 'Ali',
       attributes: {
-        age: 7,
+        height: 120,
         sex: 'female',
         birthDate: '1858-05-04',
         bodyType: ['petite', 'slender'],
@@ -39,7 +39,7 @@ describe('characters', () => {
     });
     expect(character).toMatchObject({ name: 'Alice', nickname: 'Ali', deletedAt: null });
     expect(character.attributes).toEqual({
-      age: 7,
+      height: 120,
       sex: 'female',
       birthDate: '1858-05-04',
       bodyType: ['petite', 'slender'],
@@ -53,7 +53,7 @@ describe('characters', () => {
     const bad = [
       { name: 'X', attributes: { bodyType: ['inexistente'] } },
       { name: 'X', attributes: { handedness: 'left-ish' } },
-      { name: 'X', attributes: { age: 'sete' } },
+      { name: 'X', attributes: { height: 'alto' } },
       { name: 'X', attributes: { birthDate: '04/05/1858' } },
       { name: '  ' },
     ];
@@ -65,7 +65,7 @@ describe('characters', () => {
 
   it('lista, atualiza (substituindo a ficha) e manda para a lixeira', async () => {
     const story = await createStory();
-    const c = await createCharacter(story.id, { name: 'Chapeleiro', attributes: { age: 40 } });
+    const c = await createCharacter(story.id, { name: 'Chapeleiro', attributes: { height: 180 } });
 
     const patched = await app.inject({
       method: 'PATCH',
@@ -73,7 +73,7 @@ describe('characters', () => {
       payload: { attributes: { hairColor: 'ruivo' } },
     });
     expect(patched.json()).toMatchObject({ name: 'Chapeleiro', attributes: { hairColor: 'ruivo' } });
-    expect(patched.json().attributes.age).toBeUndefined();
+    expect(patched.json().attributes.height).toBeUndefined();
 
     const list = (await app.inject({ url: `/api/stories/${story.id}/characters` })).json();
     expect(list.map((x: WithId) => x.id)).toEqual([c.id]);

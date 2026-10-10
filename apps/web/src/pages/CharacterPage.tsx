@@ -1,7 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router';
 import { familyRoleLabel } from '@wonderland/shared';
 import {
-  formatDate,
   useCharacter,
   useCharacterEvents,
   useCharacterRelations,
@@ -11,7 +10,9 @@ import {
 } from '../api';
 import { filledGroups, formatAttribute } from '../characterDisplay';
 import { EventsSection } from '../components/EventsSection';
-import { ageAt } from '../timelineLayout';
+import { LifeBadge, lifeOf, lifeSummary } from '../components/LifeStatus';
+import { useMapLocations } from '../mapLocations';
+import { lifeMoment } from '../timelineLayout';
 
 export function CharacterPage() {
   const { id: storyId = '', characterId = '' } = useParams();
@@ -22,6 +23,7 @@ export function CharacterPage() {
   const deleteCharacter = useDeleteCharacter(storyId);
   const ethnicities = useEthnicities(storyId);
   const relations = useCharacterRelations(characterId);
+  const map = useMapLocations(storyId);
   const navigate = useNavigate();
 
   if (character.isLoading) return <main className="container muted">Carregando…</main>;
@@ -36,10 +38,9 @@ export function CharacterPage() {
 
   const c = character.data;
   const presentDate = storyEvents.data?.at(-1)?.date;
-  const birthDate = c.attributes.birthDate as string | undefined;
-  const deathDate = c.attributes.deathDate as string | undefined;
-  // morreu até os "dias atuais" da história (sem eventos, vale a data de falecimento informada)
-  const dead = deathDate && (!presentDate || deathDate <= presentDate.slice(0, 10));
+  const life = lifeOf(c);
+  const summary = lifeSummary(c, presentDate);
+  const birthPlace = c.birthLocationId ? map.byId.get(c.birthLocationId) : undefined;
   const groups = filledGroups(c.attributes);
   const ethnicity = ethnicities.data?.find((e) => e.id === c.ethnicityId);
 
@@ -60,15 +61,11 @@ export function CharacterPage() {
               {ethnicity.kind && <span className="muted"> · {ethnicity.kind}</span>}
             </p>
           )}
-          {dead ? (
-            <p className="muted">
-              ✝ Faleceu em {formatDate(`${deathDate}T00:00:00.000Z`)}
-              {birthDate && ` aos ${ageAt(birthDate, deathDate)} anos`}
-            </p>
-          ) : (
-            birthDate &&
-            presentDate && <p className="muted">Idade nos dias atuais: {ageAt(birthDate, presentDate)} anos</p>
-          )}
+          <p className="life-line">
+            <LifeBadge character={c} />
+            {summary && <span>{summary}</span>}
+          </p>
+          {birthPlace && <p className="muted">Nasceu em 📍 {birthPlace.name}</p>}
           {relations.data && relations.data.length > 0 && (
             <ul className="family-list">
               {relations.data.map((r) => (
@@ -126,6 +123,7 @@ export function CharacterPage() {
         events={characterEvents.data ?? []}
         presentDate={presentDate}
         newEventHref={`/stories/${storyId}/events/new?characterId=${c.id}`}
+        lifeMomentOf={(e) => lifeMoment(e.date, life.birth, life.death)}
       />
     </main>
   );

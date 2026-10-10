@@ -124,7 +124,6 @@ export const characterFieldGroups: FieldGroup[] = [
     key: 'basic',
     label: 'Dados básicos',
     fields: [
-      { key: 'age', label: 'Idade', type: 'number', unit: 'anos' },
       {
         key: 'sex',
         label: 'Sexo',
@@ -133,7 +132,6 @@ export const characterFieldGroups: FieldGroup[] = [
       },
       { key: 'birthDate', label: 'Data de nascimento', type: 'date' },
       { key: 'deathDate', label: 'Data de falecimento', type: 'date' },
-      text('birthPlace', 'Lugar de nascimento'),
       text('birthSigns', 'Sinais de nascimento'),
       text('religion', 'Religião'),
       text('dialect', 'Dialeto'),

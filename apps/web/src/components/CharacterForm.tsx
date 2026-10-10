@@ -1,12 +1,16 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
 import {
   characterFieldGroups,
   cleanAttributes,
   type CharacterAttributes,
   type CharacterField,
+  type LocationKind,
+  type MapLocation,
 } from '@wonderland/shared';
 import type { CharacterInput, CharacterRef, Ethnicity, RelationInput } from '../api';
 import { ChipSelect } from './ChipSelect';
+import { groupLocations } from '../mapLocations';
 import { FamilyEditor } from './FamilyEditor';
 
 type Draft = Record<string, unknown>;
@@ -18,6 +22,9 @@ type Props = {
   /** Outros personagens da história (candidatos a parente). */
   relatives: CharacterRef[];
   initialRelations?: RelationInput[];
+  /** Lugares do mapa (para o local de nascimento); null quando a história não tem mapa. */
+  locations: MapLocation[] | null;
+  mapHref: string;
   submitLabel: string;
   onSubmit: (input: CharacterInput, relations: RelationInput[]) => Promise<unknown>;
   onCancel: () => void;
@@ -86,6 +93,8 @@ export function CharacterForm({
   ethnicities,
   relatives,
   initialRelations,
+  locations,
+  mapHref,
   submitLabel,
   onSubmit,
   onCancel,
@@ -95,6 +104,10 @@ export function CharacterForm({
   const [ethnicityId, setEthnicityId] = useState(initial?.ethnicityId ?? '');
   const [attrs, setAttrs] = useState<Draft>(initial?.attributes ?? {});
   const [relations, setRelations] = useState<RelationInput[]>(initialRelations ?? []);
+  // "kind:id" ou '' (não informado)
+  const [birthLocation, setBirthLocation] = useState(
+    initial?.birthLocation ? `${initial.birthLocation.kind}:${initial.birthLocation.id}` : '',
+  );
   const [error, setError] = useState<string>();
   const [saving, setSaving] = useState(false);
 
@@ -109,6 +122,9 @@ export function CharacterForm({
         name,
         nickname,
         ethnicityId: ethnicityId || null,
+        birthLocation: birthLocation
+          ? { kind: birthLocation.split(':')[0] as LocationKind, id: birthLocation.split(':')[1] }
+          : null,
         attributes: cleanAttributes(attrs) as CharacterAttributes,
       }, relations.filter((r) => r.otherId));
     } catch (err) {
@@ -144,6 +160,27 @@ export function CharacterForm({
               <option value={ethnicityId}>(etnia na lixeira)</option>
             )}
           </select>
+        </label>
+        <label className="grow">
+          Local de nascimento
+          {locations ? (
+            <select value={birthLocation} onChange={(e) => setBirthLocation(e.target.value)}>
+              <option value="">— não informado —</option>
+              {groupLocations(locations).map(([group, items]) => (
+                <optgroup key={group} label={group}>
+                  {items.map((l) => (
+                    <option key={l.id} value={`${l.kind}:${l.id}`}>
+                      {l.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          ) : (
+            <span className="muted">
+              A história ainda não tem mapa. <Link to={mapHref}>Criar o mapa</Link>
+            </span>
+          )}
         </label>
       </div>
 

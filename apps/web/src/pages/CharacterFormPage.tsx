@@ -9,6 +9,7 @@ import {
   useUpdateCharacter,
 } from '../api';
 import { CharacterForm } from '../components/CharacterForm';
+import { useMapLocations } from '../mapLocations';
 import { useGoBack } from '../navigation';
 
 /** Cria (/stories/:id/characters/new) ou edita (/stories/:id/characters/:characterId/edit). */
@@ -20,6 +21,7 @@ export function CharacterFormPage() {
   const characters = useCharacters(storyId);
   const relations = useCharacterRelations(characterId);
   const saveRelations = useSaveRelations();
+  const map = useMapLocations(storyId);
   const createCharacter = useCreateCharacter(storyId);
   const updateCharacter = useUpdateCharacter(storyId, characterId ?? '');
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ export function CharacterFormPage() {
     characterId ? `/stories/${storyId}/characters/${characterId}` : `/stories/${storyId}/characters`,
   );
 
-  if ((!isNew && (character.isLoading || relations.isLoading)) || characters.isLoading) return <main className="container muted">Carregando…</main>;
+  if ((!isNew && (character.isLoading || relations.isLoading)) || characters.isLoading || map.isLoading) return <main className="container muted">Carregando…</main>;
   if (!isNew && !character.data) {
     return (
       <main className="container">
@@ -51,9 +53,15 @@ export function CharacterFormPage() {
               nickname: c.nickname,
               attributes: c.attributes,
               ethnicityId: c.ethnicityId,
+              birthLocation:
+                c.birthLocationKind && c.birthLocationId
+                  ? { kind: c.birthLocationKind, id: c.birthLocationId }
+                  : null,
             }
           }
           ethnicities={ethnicities.data ?? []}
+          locations={map.locations}
+          mapHref={`/stories/${storyId}/map/edit`}
           relatives={(characters.data ?? []).filter((x) => x.id !== characterId)}
           initialRelations={relations.data?.map((r) => ({ otherId: r.other.id, role: r.role }))}
           submitLabel={isNew ? 'Criar' : 'Salvar'}

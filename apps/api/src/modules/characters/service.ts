@@ -1,6 +1,7 @@
 import { NotFoundError } from '../../errors';
 import { ethnicityService } from '../ethnicities/service';
 import { eventRepository } from '../events/repository';
+import { mapService } from '../map/service';
 import { storyService } from '../stories/service';
 import { listRelations, replaceRelations, type RelationInput } from './relations';
 import { characterRepository as repo } from './repository';
@@ -21,11 +22,13 @@ export const characterService = {
   async create(storyId: string, input: CharacterCreate) {
     await storyService.get(storyId);
     await ethnicityService.assertInStory(storyId, input.ethnicityId);
+    await mapService.assertLocation(storyId, input.birthLocation);
     return repo.create(storyId, input);
   },
   async update(id: string, input: CharacterUpdate) {
     const character = await get(id);
     await ethnicityService.assertInStory(character.storyId, input.ethnicityId);
+    await mapService.assertLocation(character.storyId, input.birthLocation);
     return repo.update(id, input);
   },
   // Os vínculos com eventos ficam; o personagem só deixa de aparecer neles.

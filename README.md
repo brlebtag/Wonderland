@@ -18,8 +18,12 @@ consistência da narrativa.
   personalidade, passado, relacionamentos, trabalho, habilidades, gostos, sobrenatural).
   - Vinculados a eventos (muitos-para-muitos); a página do personagem mostra a timeline só dos eventos dele.
   - Personagens podem ser criados direto do formulário de evento, só com o nome.
-  - Com data de nascimento preenchida, mostra a idade nos "dias atuais" da história; com data de
-    falecimento, mostra "faleceu aos N anos" (e o personagem sai do mapa depois dessa data).
+  - A **idade é calculada** pela data de nascimento até os "dias atuais" da história (não há campo
+    de idade). Na página do personagem, cada evento mostra a idade que ele tinha ("nascimento",
+    "12 anos"...).
+  - Selo colorido **Vivo / Falecido** (falecido = data de falecimento preenchida), com "faleceu aos
+    N anos"; no mapa no tempo o personagem sai depois dessa data.
+  - **Local de nascimento** vinculado a um lugar do mapa, como o local dos eventos.
   - **Família**: vincule outros personagens como pai/mãe, filho/filha, avô/avó, irmão/irmã, tio/tia,
     primo/prima, cônjuge, padrasto/madrasta, sogro/sogra, cunhado/cunhada, padrinho/madrinha...
     Cada vínculo aparece nas duas fichas, com o papel invertido (pai ↔ filha) e no gênero do parente.
@@ -156,7 +160,8 @@ Story 1───* Event *───* Character *───0..1 Ethnicity
 
 - `Story`: `title`, `description`
 - `Event`: `title`, `description`, `date` (ordenação da timeline), `locationKind` + `locationId`
-- `Character`: `name`, `nickname`, `attributes` (JSON com a ficha), `ethnicityId`
+- `Character`: `name`, `nickname`, `attributes` (JSON com a ficha), `ethnicityId`,
+  `birthLocationKind` + `birthLocationId` (local de nascimento no mapa)
 - `CharacterRelation`: `characterId`, `relatedId`, `role` — "related é role de character", um
   registro por par; o outro lado usa o papel inverso (`packages/shared/src/familyRoles.ts`)
 - `Ethnicity`: `name`, `kind`, `color`, `description`
@@ -174,8 +179,9 @@ O mapa é **um documento JSON por história** (formato em
   `paths` (rios, estradas e cordilheiras, com `size` opcional), `territories` (círculo ou
   polígono, com etnia) e `regions` (nome, cor, etnia).
 
-Um evento referencia um marcador, uma região, um território ou uma linha pelo id. Ao salvar o mapa, eventos que
-apontavam para um elemento removido **ficam sem local** (a API informa quantos). Para posicionar uma
+Um evento (e o local de nascimento de um personagem) referencia um marcador, uma região, um
+território ou uma linha pelo id. Ao salvar o mapa, eventos e personagens que apontavam para um
+elemento removido **ficam sem local** (a API informa quantos). Para posicionar uma
 região usa-se a célula dela mais próxima do seu centro; um território usa o centro do círculo/polígono;
 uma linha, o ponto no meio do seu comprimento.
 
@@ -216,7 +222,7 @@ Erros de validação respondem `400`; registros inexistentes ou na lixeira, `404
 | PATCH | `/events/:id` | Atualiza (`characterIds` substitui os vínculos) |
 | DELETE | `/events/:id` | Lixeira |
 | GET | `/stories/:id/characters` | Personagens da história |
-| POST | `/stories/:id/characters` | Cria `{ name, nickname?, attributes? }` |
+| POST | `/stories/:id/characters` | Cria `{ name, nickname?, attributes?, ethnicityId?, birthLocation? }` |
 | GET | `/characters/:id` | Detalhe |
 | PATCH | `/characters/:id` | Atualiza (`attributes` substitui a ficha inteira) |
 | DELETE | `/characters/:id` | Lixeira (some dos eventos; o vínculo é mantido) |
@@ -227,7 +233,7 @@ Erros de validação respondem `400`; registros inexistentes ou na lixeira, `404
 | POST | `/stories/:id/ethnicities` | Cria `{ name, kind?, color?, description? }` |
 | GET · PATCH · DELETE | `/ethnicities/:id` | Detalhe, atualiza, lixeira |
 | GET | `/stories/:id/map` | Mapa da história (`data: null` se ainda não existe) |
-| PUT | `/stories/:id/map` | Salva `{ data }`; responde `clearedEvents` (eventos que ficaram sem local) |
+| PUT | `/stories/:id/map` | Salva `{ data }`; responde `clearedEvents` e `clearedCharacters` (quem ficou sem local) |
 | GET | `/trash/stories` | Histórias na lixeira (com `_count` de eventos e personagens) |
 | GET | `/stories/:id/trash` | Eventos e personagens na lixeira da história |
 | POST | `/events/:id/restore` · `/characters/:id/restore` · `/ethnicities/:id/restore` | Restaura da lixeira |

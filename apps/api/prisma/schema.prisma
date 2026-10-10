@@ -49,6 +49,9 @@ model Character {
   attributes  Json
   ethnicityId String?
   ethnicity   Ethnicity? @relation(fields: [ethnicityId], references: [id], onDelete: SetNull)
+  // Local de nascimento: elemento do mapa da história, como o local dos eventos.
+  birthLocationKind String?
+  birthLocationId   String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   deletedAt   DateTime?

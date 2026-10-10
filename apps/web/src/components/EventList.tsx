@@ -10,6 +10,8 @@ type Props = {
   presentDate?: string;
   /** Nome do local do evento no mapa, se houver. */
   locationName?: (event: StoryEvent) => string | undefined;
+  /** Momento da vida do personagem naquele evento ("12 anos", "nascimento"...). */
+  lifeMomentOf?: (event: StoryEvent) => string | undefined;
   onHover: (ids: string[]) => void;
   onTrash: (event: StoryEvent) => void;
 };
@@ -19,6 +21,7 @@ export function EventList({
   highlightedIds,
   presentDate,
   locationName,
+  lifeMomentOf,
   onHover,
   onTrash,
 }: Props) {
@@ -48,6 +51,7 @@ export function EventList({
             <div className="timeline-date">
               {formatDate(event.date)}
               {presentDate && ` (${formatSincePresent(event.date, presentDate)})`}
+              {lifeMomentOf?.(event) && <span className="life-moment">{lifeMomentOf(event)}</span>}
             </div>
             <strong>{event.title}</strong>
             {locationName?.(event) && <div className="event-location">📍 {locationName(event)}</div>}

@@ -23,12 +23,12 @@ export const mapService = {
       throw new BadRequestError('Etnia inválida para esta história');
     }
 
-    const { map, clearedEvents } = await repo.save(
+    const { map, clearedEvents, clearedCharacters } = await repo.save(
       storyId,
       data,
       listLocations(data).map((l) => l.id),
     );
-    return { data: map.data as MapData, updatedAt: map.updatedAt, clearedEvents };
+    return { data: map.data as MapData, updatedAt: map.updatedAt, clearedEvents, clearedCharacters };
   },
 
   /** Garante que o local existe no mapa da história (usado ao salvar eventos). */

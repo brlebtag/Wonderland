@@ -65,7 +65,13 @@ export function EventFormPage() {
           locations={map.locations}
           mapHref={`/stories/${storyId}/map/edit`}
           onCreateCharacter={(name) =>
-            createCharacter.mutateAsync({ name, nickname: '', attributes: {}, ethnicityId: null })
+            createCharacter.mutateAsync({
+              name,
+              nickname: '',
+              attributes: {},
+              ethnicityId: null,
+              birthLocation: null,
+            })
           }
           submitLabel={isNew ? 'Adicionar' : 'Salvar'}
           onSubmit={async (input) => {

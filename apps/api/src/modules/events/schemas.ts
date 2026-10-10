@@ -16,8 +16,8 @@ const characterIds = z
   .max(500)
   .transform((ids) => [...new Set(ids)]);
 
-// Lugar no mapa da história (null = sem local).
-const location = z
+// Lugar no mapa da história (null = sem local). Também usado no local de nascimento dos personagens.
+export const location = z
   .object({ kind: z.enum(['feature', 'region', 'territory', 'path']), id: z.string().min(1).max(64) })
   .nullable();
 

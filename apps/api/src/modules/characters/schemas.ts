@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { characterFields, cleanAttributes, type CharacterField } from '@wonderland/shared';
+import { location } from '../events/schemas';
 
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato YYYY-MM-DD');
 
@@ -37,18 +38,22 @@ const name = z.string().trim().min(1).max(200);
 const nickname = z.string().trim().max(200);
 
 const ethnicityId = z.string().min(1).nullable();
+// Local de nascimento: um elemento do mapa da história (null = não informado).
+const birthLocation = location;
 
 export const characterCreate = z.object({
   name,
   nickname: nickname.default(''),
   attributes: attributesSchema.default({}),
   ethnicityId: ethnicityId.default(null),
+  birthLocation: birthLocation.default(null),
 });
 export const characterUpdate = z.object({
   name: name.optional(),
   nickname: nickname.optional(),
   attributes: attributesSchema.optional(),
   ethnicityId: ethnicityId.optional(),
+  birthLocation: birthLocation.optional(),
 });
 
 export type CharacterCreate = z.infer<typeof characterCreate>;
