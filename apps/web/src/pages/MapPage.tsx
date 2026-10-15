@@ -15,6 +15,7 @@ import {
 import { StoryHeader } from '../components/StoryHeader';
 import { CHARACTER_PALETTE, fromData } from '../map/mapDoc';
 import { MapView, NO_ETHNICITY_COLOR, parseColorMode, type RegionColorMode } from '../map/MapView';
+import { MapViewerModal } from '../map/MapViewerModal';
 import { useStoredState } from '../storage';
 import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
 import { useMapNavigation } from '../map/useMapNavigation';
@@ -55,6 +56,7 @@ export function MapPage() {
       {map.data?.data ? (
         <MapTimeline
           storyId={storyId}
+          storyTitle={story.data.title}
           data={map.data.data}
           events={events.data ?? []}
           characters={characters.data ?? []}
@@ -89,12 +91,14 @@ const deathDayOf = (c: Character) =>
 
 function MapTimeline({
   storyId,
+  storyTitle,
   data,
   events,
   characters,
   ethnicities,
 }: {
   storyId: string;
+  storyTitle: string;
   data: MapData;
   events: StoryEvent[];
   characters: Character[];
@@ -207,6 +211,7 @@ function MapTimeline({
   };
 
   const located = events.filter((e) => e.locationId && locations.has(e.locationId));
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   return (
     <>
@@ -221,11 +226,23 @@ function MapTimeline({
             </select>
           </label>
           <ZoomSelect value={zoomPref} onChange={setZoomPref} />
+          <button className="ghost" onClick={() => setViewerOpen(true)}>
+            ⛶ Ver mapa ampliado
+          </button>
           <Link className="button" to={`/stories/${storyId}/map/edit`}>
             ✏️ Editar mapa
           </Link>
         </div>
       </div>
+
+      {viewerOpen && (
+        <MapViewerModal
+          map={doc}
+          ethnicities={ethnicities}
+          title={storyTitle}
+          onClose={() => setViewerOpen(false)}
+        />
+      )}
 
       {events.length === 0 ? (
         <p className="muted">Cadastre eventos com local e personagens para vê-los se deslocar no mapa.</p>

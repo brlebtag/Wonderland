@@ -567,3 +567,32 @@ label.inline.check { color: var(--text); margin-top: 4px; }
 .combo-option.active { background: var(--accent-soft); }
 .combo-option.selected span:first-child { font-weight: 700; }
 .combo-empty { padding: 6px 10px; }
+
+/* filtros da lista de personagens */
+.filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.filters label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.filters .grow { flex: 1; min-width: 200px; }
+.filters select { max-width: 200px; }
+.age-range { display: flex; gap: 6px; }
+.age-range input { width: 76px; }
+.filters-footer { flex-basis: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+/* mapa ampliado (janela em tela cheia) */
+.map-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+.map-modal-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.map-modal .map-scroll { flex: 1; max-height: none; border: 0; border-radius: 0; }
