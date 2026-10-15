@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from 'react';
 import type { CharacterRef } from '../api';
 import { ChipSelect } from './ChipSelect';
+import { normalize } from '../text';
 
 type Props = {
   /** Personagens da história. */
@@ -10,9 +11,6 @@ type Props = {
   /** Cria um personagem só com o nome (a ficha é preenchida depois). */
   onCreate: (name: string) => Promise<CharacterRef>;
 };
-
-const normalize = (s: string) =>
-  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
 /**
  * Vincula personagens a um evento: chips para marcar/desmarcar, uma caixa que filtra pelo nome

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { MapLocation } from '@wonderland/shared';
+import { normalize } from '../text';
 
 type Props = {
   locations: MapLocation[];
@@ -11,9 +12,6 @@ type Props = {
 
 const keyOf = (l: MapLocation) => `${l.kind}:${l.id}`;
 
-/** Sem acentos e em minúsculas, para a busca não depender de como o nome foi digitado. */
-const normalize = (s: string) =>
-  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
 /**
  * Escolha de um lugar do mapa digitando: o texto filtra as opções pelo nome (ou pelo tipo,
