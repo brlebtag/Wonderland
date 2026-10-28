@@ -100,7 +100,69 @@ export type MapData = {
   features: MapFeature[];
   paths: MapPath[];
   territories: MapTerritory[];
+  /** Escala e planeta; mapas antigos podem não ter (ver mapMeta). */
+  meta?: MapMeta;
 };
+
+// ---------- escala e planeta ----------
+
+/** Sentido de rotação do planeta / dos ventos. "prograde" = de oeste para leste, como a Terra. */
+export type Spin = 'prograde' | 'retrograde';
+
+export const SPINS: { value: Spin; label: string; short: string }[] = [
+  { value: 'prograde', label: 'De oeste para leste (como a Terra: o sol nasce no leste)', short: 'Oeste → Leste' },
+  { value: 'retrograde', label: 'De leste para oeste (o sol nasce no oeste)', short: 'Leste → Oeste' },
+];
+
+export type MapMeta = {
+  /** Tamanho real que o mapa inteiro representa. */
+  widthKm: number;
+  heightKm: number;
+  rotation: Spin;
+  winds: Spin;
+};
+
+/** A Terra num mapa cartesiano (equirretangular): equador × meridiano de polo a polo. */
+export const EARTH_KM = { width: 40075, height: 20004 };
+
+/** Escala assumida para mapas criados antes de existir a escala (≈ continental). */
+export const LEGACY_KM_PER_CELL = 17;
+
+export const MAX_MAP_KM = 1_000_000;
+
+/** Escala e planeta do mapa; mapas antigos assumem 17 km por célula e rotação/ventos da Terra. */
+export function mapMeta(map: Pick<MapData, 'width' | 'height' | 'meta'>): MapMeta {
+  return (
+    map.meta ?? {
+      widthKm: map.width * LEGACY_KM_PER_CELL,
+      heightKm: map.height * LEGACY_KM_PER_CELL,
+      rotation: 'prograde',
+      winds: 'prograde',
+    }
+  );
+}
+
+/**
+ * Distância em km entre dois pontos (em células). Cada eixo tem a sua escala:
+ * largura em km / células de largura e altura em km / células de altura.
+ */
+export function distanceKm(
+  map: { width: number; height: number },
+  meta: Pick<MapMeta, 'widthKm' | 'heightKm'>,
+  a: Point,
+  b: Point,
+) {
+  const kx = meta.widthKm / map.width;
+  const ky = meta.heightKm / map.height;
+  return Math.hypot((b[0] - a[0]) * kx, (b[1] - a[1]) * ky);
+}
+
+/** "850 m", "12,4 km", "1.240 km". */
+export function formatKm(km: number) {
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  if (km < 100) return `${(Math.round(km * 10) / 10).toLocaleString('pt-BR')} km`;
+  return `${Math.round(km).toLocaleString('pt-BR')} km`;
+}
 
 /** Lugar do mapa referenciado por um evento. */
 export type LocationKind = 'feature' | 'region' | 'territory' | 'path';
@@ -138,12 +200,13 @@ export function decodeRle<T extends Uint8Array | Uint16Array>(rle: string, out: 
   return out;
 }
 
-export function createEmptyMap(width = 240, height = 150): MapData {
+export function createEmptyMap(width = 240, height = 150, meta?: MapMeta): MapData {
   const cells = width * height;
   return {
     version: 1,
     width,
     height,
+    ...(meta && { meta }),
     terrain: `${SEA}*${cells}`,
     regionGrid: `0*${cells}`,
     regions: [],

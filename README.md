@@ -41,6 +41,11 @@ consistência da narrativa.
   - delimite **territórios** de uma etnia com linha tracejada (círculo/"raio" ou polígono), que podem
     atravessar várias regiões — ex.: uma tribo que transita entre dois países;
   - selecionar e arrastar, desfazer (Ctrl+Z), apagar (Delete), zoom e salvar.
+- **Escala e planeta** — cada mapa tem largura × altura em km (padrão de um mapa novo: a Terra,
+  40.075 × 20.004 km), o sentido de rotação do planeta e a direção dos ventos (editáveis no painel
+  "🌍 Escala e planeta" do editor). No canto inferior direito do mapa ficam a **rosa dos ventos**, a
+  **barra de escala** e a legenda de rotação/ventos. A **régua** (📏) mede a distância em linha reta
+  entre dois pontos, no editor, na aba Mapa e no mapa ampliado.
 - **Local dos eventos** — cada evento pode apontar para um marcador, uma região, um território ou
   uma linha (rio, estrada, cordilheira) do mapa ("evento X, no ano Y, com W, K e Z, em P").
 - **Mapa no tempo** — régua do primeiro ao último evento (com play, velocidade e saltos de evento em
@@ -174,7 +179,12 @@ O mapa é **um documento JSON por história** (formato em
 [`packages/shared/src/map.ts`](packages/shared/src/map.ts)), salvo de uma vez pelo editor:
 
 - **Grade pintada**: `terrain` (mar/terra/lago por célula) e `regionGrid` (região de cada célula),
-  guardadas em RLE (`valor*quantidade,...`). Tamanho escolhido ao criar (160×100, 240×150 ou 360×225).
+  guardadas em RLE (`valor*quantidade,...`). A grade é criada com 160, 240 ou 360 células de largura e
+  a altura na proporção dos km (células quadradas); não muda depois.
+- **`meta`**: `widthKm`, `heightKm`, `rotation` e `winds` (`prograde` = de oeste para leste, como a
+  Terra; `retrograde` = de leste para oeste). Cada eixo tem a sua escala (km da largura ÷ células da
+  largura e km da altura ÷ células da altura), e a régua usa as duas. Mapas criados antes disso
+  receberam 17 km por célula e rotação/ventos da Terra.
 - **Elementos vetoriais** em coordenadas de célula: `features` (marcadores, com `size` opcional),
   `paths` (rios, estradas e cordilheiras, com `size` opcional), `territories` (círculo ou
   polígono, com etnia) e `regions` (nome, cor, etnia).

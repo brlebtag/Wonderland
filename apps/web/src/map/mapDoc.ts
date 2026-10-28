@@ -1,6 +1,8 @@
 import {
   decodeRle,
   encodeRle,
+  mapMeta,
+  type MapMeta,
   type MapData,
   type MapFeature,
   type MapPath,
@@ -21,6 +23,8 @@ export type EditableMap = {
   features: MapFeature[];
   paths: MapPath[];
   territories: MapTerritory[];
+  /** Escala em km e sentido de rotação/ventos (mapas antigos recebem o padrão). */
+  meta: MapMeta;
 };
 
 export function fromData(data: MapData): EditableMap {
@@ -34,6 +38,7 @@ export function fromData(data: MapData): EditableMap {
     features: data.features,
     paths: data.paths,
     territories: data.territories,
+    meta: mapMeta(data),
   };
 }
 
@@ -48,6 +53,7 @@ export function toData(map: EditableMap): MapData {
     features: map.features,
     paths: map.paths,
     territories: map.territories,
+    meta: map.meta,
   };
 }
 

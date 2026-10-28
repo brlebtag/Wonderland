@@ -94,6 +94,13 @@ describe('mapa', () => {
     expect((await req('GET', `/api/stories/${story.id}/map`)).json().data).toEqual(sampleMap(e.id));
   });
 
+  it('guarda escala e planeta (meta)', async () => {
+    const story = await createStory();
+    const meta = { widthKm: 40075, heightKm: 20004, rotation: 'retrograde', winds: 'prograde' };
+    await ok('PUT', `/api/stories/${story.id}/map`, { data: { ...sampleMap(), meta } });
+    expect((await req('GET', `/api/stories/${story.id}/map`)).json().data.meta).toEqual(meta);
+  });
+
   it('rejeita documento inconsistente', async () => {
     const story = await createStory();
     const base = sampleMap();
@@ -104,6 +111,8 @@ describe('mapa', () => {
       { features: [{ id: 'reg-norte', type: 'city', name: 'Dup', x: 0, y: 0 }] }, // id repetido
       { regions: [{ ...base.regions[0], ethnicityId: 'nao-existe' }] }, // etnia de fora
       { features: [{ ...base.features[0], size: 10 }] }, // tamanho fora do limite
+      { meta: { widthKm: -5, heightKm: 100, rotation: 'prograde', winds: 'prograde' } }, // km inválido
+      { meta: { widthKm: 100, heightKm: 100, rotation: 'para cima', winds: 'prograde' } } as never, // sentido inválido
     ];
     for (const patch of invalid) {
       const res = await req('PUT', `/api/stories/${story.id}/map`, { data: { ...base, ...patch } });

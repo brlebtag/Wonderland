@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
   decodeRle,
   FEATURE_TYPES,
+  MAX_MAP_KM,
   MAX_SIZE,
   MIN_SIZE,
   PATH_TYPES,
@@ -49,6 +50,11 @@ const shape = z.discriminatedUnion('kind', [
 
 const territory = z.object({ id: elementId, name, ethnicityId, shape });
 
+const km = z.number().positive().max(MAX_MAP_KM);
+const spin = z.enum(['prograde', 'retrograde']);
+// opcional: mapas antigos não têm (o front assume a escala padrão até salvar)
+const meta = z.object({ widthKm: km, heightKm: km, rotation: spin, winds: spin }).optional();
+
 const MAX_TERRAIN = Math.max(...TERRAIN_TYPES.map((t) => t.code));
 
 export const mapDataSchema = z
@@ -62,6 +68,7 @@ export const mapDataSchema = z
     features: z.array(feature).max(20000),
     paths: z.array(path).max(5000),
     territories: z.array(territory).max(5000),
+    meta,
   })
   .superRefine((map, ctx) => {
     const cells = map.width * map.height;

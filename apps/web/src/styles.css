@@ -596,3 +596,74 @@ label.inline.check { color: var(--text); margin-top: 4px; }
   background: var(--surface);
 }
 .map-modal .map-scroll { flex: 1; max-height: none; border: 0; border-radius: 0; }
+
+/* rosa dos ventos, escala e legenda do planeta (fixos no canto do mapa) */
+.map-frame { position: relative; min-width: 0; }
+.map-overlay {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.78);
+  border: 1px solid rgb(0 0 0 / 0.12);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.15);
+  color: #2b2418;
+  font-size: 0.7rem;
+  pointer-events: none;
+}
+.map-overlay.collapsed { padding: 4px; }
+.compass { width: 58px; height: 58px; align-self: center; }
+.map-overlay.collapsed .compass { width: 48px; height: 48px; }
+.overlay-toggle {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  line-height: 1;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid rgb(0 0 0 / 0.15);
+  background: #fff;
+  color: #2b2418;
+  pointer-events: auto;
+  cursor: pointer;
+}
+.compass text { text-anchor: middle; dominant-baseline: middle; font-weight: 700; font-family: Georgia, serif; }
+.compass-n { font-size: 13px; fill: #9c1f1f; }
+.compass-l { font-size: 10px; fill: #4a3b25; }
+.map-scale { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.map-scale-bar {
+  height: 6px;
+  border: 1.5px solid #2b2418;
+  border-top: 0;
+  background: repeating-linear-gradient(90deg, #2b2418 0 25%, #fff 25% 50%);
+}
+.spin-row { display: flex; align-items: center; gap: 6px; }
+.spin-icon { width: 22px; height: 18px; }
+.map-modal .map-frame { flex: 1; display: flex; min-height: 0; }
+.map-modal .map-frame .map-scroll { flex: 1; }
+
+/* régua */
+.ruler line { stroke: #c0392b; }
+.ruler circle { fill: #fff; stroke: #c0392b; }
+.ruler text {
+  text-anchor: middle;
+  font-weight: 700;
+  fill: #9c1f1f;
+  paint-order: stroke;
+  stroke: rgb(255 255 255 / 0.95);
+  stroke-linejoin: round;
+}
+.map-svg .ruler { pointer-events: none; }
+button.active { background: var(--accent-soft); border-color: var(--accent); }
+
+.planet-panel summary { cursor: pointer; font-weight: 600; }
+.planet-panel[open] summary { margin-bottom: 8px; }

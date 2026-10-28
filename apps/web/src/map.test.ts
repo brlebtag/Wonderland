@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   createEmptyMap,
   decodeRle,
+  distanceKm,
   encodeRle,
+  formatKm,
+  mapMeta,
   listLocations,
   pathMidpoint,
   positionAt,
@@ -100,5 +103,30 @@ describe('positionAt', () => {
 
   it('fica parado depois do último evento', () => {
     expect(positionAt(stops, 99)).toMatchObject({ x: 10, y: 10, moving: false });
+  });
+});
+
+describe('escala', () => {
+  it('mapas antigos assumem 17 km por célula e rotação/ventos da Terra', () => {
+    expect(mapMeta(createEmptyMap(360, 225))).toEqual({
+      widthKm: 6120,
+      heightKm: 3825,
+      rotation: 'prograde',
+      winds: 'prograde',
+    });
+  });
+
+  it('mede a distância com escala própria em cada eixo', () => {
+    const map = { width: 100, height: 50 };
+    const meta = { widthKm: 1000, heightKm: 1000 }; // 10 km/célula na largura, 20 km na altura
+    expect(distanceKm(map, meta, [0, 0], [3, 0])).toBeCloseTo(30);
+    expect(distanceKm(map, meta, [0, 0], [0, 2])).toBeCloseTo(40);
+    expect(distanceKm(map, meta, [0, 0], [3, 2])).toBeCloseTo(50);
+  });
+
+  it('formata metros e quilômetros', () => {
+    expect(formatKm(0.25)).toBe('250 m');
+    expect(formatKm(12.44)).toBe('12,4 km');
+    expect(formatKm(1240.4)).toBe('1.240 km');
   });
 });

@@ -2,7 +2,11 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
   createEmptyMap,
+  EARTH_KM,
   FEATURE_TYPES,
+  formatKm,
+  MAX_MAP_KM,
+  SPINS,
   LAND,
   MAX_SIZE,
   MIN_SIZE,
@@ -10,8 +14,10 @@ import {
   TERRAIN_TYPES,
   type FeatureType,
   type MapData,
+  type MapMeta,
   type PathType,
   type Point,
+  type Spin,
 } from '@wonderland/shared';
 import { useEthnicities, useMap, useSaveMap, useStory, type Ethnicity } from '../api';
 import { cloneMap, fromData, newId, REGION_PALETTE, toData, type EditableMap } from '../map/mapDoc';
@@ -25,10 +31,12 @@ import {
 } from '../map/MapView';
 import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
 import { useMapNavigation } from '../map/useMapNavigation';
+import { MapOverlay } from '../map/MapOverlay';
+import { RulerOverlay, useRuler } from '../map/ruler';
 import { ZoomSelect } from '../map/ZoomSelect';
 import { useStoredState } from '../storage';
 
-type Tool = 'pan' | 'select' | 'terrain' | 'region' | 'feature' | 'path' | 'circle' | 'polygon';
+type Tool = 'pan' | 'select' | 'terrain' | 'region' | 'feature' | 'path' | 'circle' | 'polygon' | 'ruler';
 
 const TOOLS: { value: Tool; label: string; hint: string }[] = [
   { value: 'pan', label: '✋ Mover', hint: 'Arraste para mover o mapa. Em qualquer ferramenta: Espaço + arrastar ou botão do meio.' },
@@ -39,13 +47,123 @@ const TOOLS: { value: Tool; label: string; hint: string }[] = [
   { value: 'path', label: '〰️ Linhas', hint: 'Rios, estradas e cordilheiras: clique ponto a ponto; duplo clique ou Enter conclui, Esc cancela.' },
   { value: 'circle', label: '◯ Território (raio)', hint: 'Arraste do centro para fora para definir o raio.' },
   { value: 'polygon', label: '⬠ Território (polígono)', hint: 'Clique os vértices; duplo clique ou Enter conclui.' },
+  { value: 'ruler', label: '📏 Régua', hint: 'Clique em dois pontos para medir a distância em linha reta; Esc limpa.' },
 ];
 
-const SIZE_PRESETS = [
-  { label: 'Pequeno (160 × 100)', width: 160, height: 100 },
-  { label: 'Médio (240 × 150)', width: 240, height: 150 },
-  { label: 'Grande (360 × 225)', width: 360, height: 225 },
+/** Resolução da grade (células na largura); a altura sai da proporção em km, para as células ficarem quadradas. */
+const RESOLUTIONS = [
+  { label: 'Baixa', width: 160 },
+  { label: 'Média', width: 240 },
+  { label: 'Alta', width: 360 },
 ];
+
+const gridHeight = (cellsWide: number, widthKm: number, heightKm: number) =>
+  Math.min(1000, Math.max(10, Math.round((cellsWide * heightKm) / widthKm)));
+
+function SpinSelect({ value, onChange, onFocus }: { value: Spin; onChange: (s: Spin) => void; onFocus?: () => void }) {
+  return (
+    <select value={value} onFocus={onFocus} onChange={(e) => onChange(e.target.value as Spin)}>
+      {SPINS.map((s) => (
+        <option key={s.value} value={s.value}>
+          {s.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/** Mapa novo: tamanho real em km (padrão: a Terra), resolução da grade, rotação e ventos. */
+function NewMapForm({ onCreate }: { onCreate: (data: MapData) => void }) {
+  const [widthKm, setWidthKm] = useState(EARTH_KM.width);
+  const [heightKm, setHeightKm] = useState(EARTH_KM.height);
+  const [resolution, setResolution] = useState(1);
+  const [rotation, setRotation] = useState<Spin>('prograde');
+  // os ventos acompanham a rotação até o usuário escolher outro sentido
+  const [winds, setWinds] = useState<Spin | null>(null);
+  const valid = widthKm > 0 && heightKm > 0 && widthKm <= MAX_MAP_KM && heightKm <= MAX_MAP_KM;
+  const cellsW = RESOLUTIONS[resolution].width;
+  const cellsH = valid ? gridHeight(cellsW, widthKm, heightKm) : 0;
+
+  return (
+    <section className="card form">
+      <p className="muted">
+        O mapa é uma grade de células que você pinta como num editor de imagem. Informe o tamanho real
+        que ele representa — o padrão é a Terra inteira num mapa plano (equador × meridiano).
+      </p>
+      <div className="row">
+        <label className="grow">
+          Largura (km)
+          <input
+            type="number"
+            min={1}
+            max={MAX_MAP_KM}
+            value={widthKm}
+            onChange={(e) => setWidthKm(Number(e.target.value))}
+            required
+          />
+        </label>
+        <label className="grow">
+          Altura (km)
+          <input
+            type="number"
+            min={1}
+            max={MAX_MAP_KM}
+            value={heightKm}
+            onChange={(e) => setHeightKm(Number(e.target.value))}
+            required
+          />
+        </label>
+        <label>
+          Resolução da grade
+          <select value={resolution} onChange={(e) => setResolution(Number(e.target.value))}>
+            {RESOLUTIONS.map((r, i) => (
+              <option key={r.label} value={i}>
+                {r.label} ({r.width} células de largura)
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div>
+        <button
+          type="button"
+          className="link"
+          onClick={() => {
+            setWidthKm(EARTH_KM.width);
+            setHeightKm(EARTH_KM.height);
+          }}
+        >
+          Usar as dimensões da Terra ({EARTH_KM.width.toLocaleString('pt-BR')} ×{' '}
+          {EARTH_KM.height.toLocaleString('pt-BR')} km)
+        </button>
+      </div>
+      {valid && (
+        <p className="muted small">
+          Grade de {cellsW} × {cellsH} células · cada célula ≈ {formatKm(widthKm / cellsW)}. A grade não
+          muda depois; a escala em km pode ser editada no editor.
+        </p>
+      )}
+      <label>
+        Sentido de rotação do planeta
+        <SpinSelect value={rotation} onChange={setRotation} />
+      </label>
+      <label>
+        Direção dos ventos
+        <SpinSelect value={winds ?? rotation} onChange={setWinds} />
+      </label>
+      <div className="actions">
+        <button
+          disabled={!valid}
+          onClick={() =>
+            onCreate(createEmptyMap(cellsW, cellsH, { widthKm, heightKm, rotation, winds: winds ?? rotation }))
+          }
+        >
+          Criar mapa
+        </button>
+      </div>
+    </section>
+  );
+}
 
 
 export function MapEditorPage() {
@@ -54,7 +172,6 @@ export function MapEditorPage() {
   const map = useMap(storyId);
   const ethnicities = useEthnicities(storyId);
   const [fresh, setFresh] = useState<MapData | null>(null);
-  const [preset, setPreset] = useState(1);
 
   if (story.isLoading || map.isLoading) return <main className="container muted">Carregando…</main>;
   if (!story.data) {
@@ -72,29 +189,7 @@ export function MapEditorPage() {
       <main className="container">
         <Link to={`/stories/${storyId}/map`}>← {story.data.title}</Link>
         <h1>Novo mapa</h1>
-        <section className="card form">
-          <p className="muted">
-            O mapa é uma grade de células que você pinta como num editor de imagem. Escolha o tamanho
-            (não dá para mudar depois):
-          </p>
-          <label>
-            Tamanho
-            <select value={preset} onChange={(e) => setPreset(Number(e.target.value))}>
-              {SIZE_PRESETS.map((p, i) => (
-                <option key={p.label} value={i}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <div className="actions">
-            <button
-              onClick={() => setFresh(createEmptyMap(SIZE_PRESETS[preset].width, SIZE_PRESETS[preset].height))}
-            >
-              Criar mapa
-            </button>
-          </div>
-        </section>
+        <NewMapForm onCreate={setFresh} />
       </main>
     );
   }
@@ -189,6 +284,7 @@ function MapEditor({
   const [draft, setDraft] = useState<Point[]>([]);
   const [circle, setCircle] = useState<{ cx: number; cy: number; r: number } | null>(null);
   const [hover, setHover] = useState<Point | null>(null);
+  const ruler = useRuler();
 
   const svgRef = useRef<SVGSVGElement>(null);
   const gesture = useRef<Gesture | null>(null);
@@ -219,6 +315,7 @@ function MapEditor({
 
   function setTool(t: Tool) {
     setToolState(t);
+    if (t !== 'ruler') ruler.clear();
     setDraft([]);
     setCircle(null);
     if (t !== 'select') setSelected(null);
@@ -294,12 +391,16 @@ function MapEditor({
       case 'select':
         setSelected(null);
         break;
+      case 'ruler':
+        ruler.click(p);
+        break;
     }
   }
 
   function onPointerMove(e: PointerEvent<SVGSVGElement>) {
     const p = toCell(e);
     setHover(p);
+    if (tool === 'ruler') ruler.setHover(p);
     const g = gesture.current;
     if (!g) return;
     if (g.kind === 'paint') {
@@ -423,6 +524,7 @@ function MapEditor({
       } else if (e.key === 'Enter' && !typing && draft.length) {
         finishDraft();
       } else if (e.key === 'Escape') {
+        ruler.clear();
         setDraft([]);
         setCircle(null);
         setSelected(null);
@@ -588,6 +690,7 @@ function MapEditor({
       </p>
 
       <div className="map-editor">
+        <div className="map-frame">
         <div className="map-scroll" ref={scrollRef} {...containerProps}>
           <MapView
             map={doc}
@@ -617,7 +720,10 @@ function MapEditor({
             )}
             {circle && <circle className="draft circle" cx={circle.cx} cy={circle.cy} r={circle.r} />}
             {selFeature && <ResizeHandles feature={selFeature} zoom={zoom} onStart={startResize} />}
+            {tool === 'ruler' && <RulerOverlay ruler={ruler} map={doc} meta={doc.meta} zoom={zoom} />}
           </MapView>
+        </div>
+        <MapOverlay map={doc} meta={doc.meta} zoom={zoom} />
         </div>
 
         <aside className="map-sidebar">
@@ -816,6 +922,15 @@ function MapEditor({
             </section>
           )}
 
+          <PlanetPanel
+            map={doc}
+            onFocus={pushUndo}
+            onChange={(patch) => {
+              setDirty(true);
+              update((d) => ({ ...d, meta: { ...d.meta, ...patch } }));
+            }}
+          />
+
           {/* regiões */}
           <section className="card">
             <div className="page-header compact">
@@ -923,5 +1038,84 @@ function ResizeHandles({
         />
       ))}
     </g>
+  );
+}
+
+/** Escala em km e sentido de rotação/ventos do mapa (editável a qualquer momento). */
+function PlanetPanel({
+  map,
+  onChange,
+  onFocus,
+}: {
+  map: EditableMap;
+  onChange: (patch: Partial<MapMeta>) => void;
+  onFocus: () => void;
+}) {
+  const { meta } = map;
+  const [keepRatio, setKeepRatio] = useState(true);
+  const ratio = meta.heightKm / meta.widthKm;
+  const kmX = meta.widthKm / map.width;
+  const kmY = meta.heightKm / map.height;
+
+  const setKm = (axis: 'widthKm' | 'heightKm', raw: string) => {
+    const v = Number(raw);
+    if (!(v > 0) || v > MAX_MAP_KM) return;
+    if (!keepRatio) return onChange({ [axis]: v });
+    onChange(
+      axis === 'widthKm'
+        ? { widthKm: v, heightKm: Math.round(v * ratio * 100) / 100 }
+        : { heightKm: v, widthKm: Math.round((v / ratio) * 100) / 100 },
+    );
+  };
+
+  return (
+    <details className="card planet-panel">
+      <summary>
+        🌍 Escala e planeta{' '}
+        <span className="muted small">
+          · {formatKm(meta.widthKm)} × {formatKm(meta.heightKm)}
+        </span>
+      </summary>
+      <div className="form">
+        <div className="row">
+          <label className="grow">
+            Largura (km)
+            <input
+              type="number"
+              min={1}
+              value={meta.widthKm}
+              onFocus={onFocus}
+              onChange={(e) => setKm('widthKm', e.target.value)}
+            />
+          </label>
+          <label className="grow">
+            Altura (km)
+            <input
+              type="number"
+              min={1}
+              value={meta.heightKm}
+              onFocus={onFocus}
+              onChange={(e) => setKm('heightKm', e.target.value)}
+            />
+          </label>
+        </div>
+        <label className="inline check">
+          <input type="checkbox" checked={keepRatio} onChange={(e) => setKeepRatio(e.target.checked)} />
+          Manter a proporção
+        </label>
+        <p className="muted small">
+          Grade de {map.width} × {map.height} células · 1 célula ≈ {formatKm(kmX)} na largura
+          {Math.abs(kmX - kmY) > 0.005 * kmX && ` e ${formatKm(kmY)} na altura`}
+        </p>
+        <label>
+          Rotação do planeta
+          <SpinSelect value={meta.rotation} onFocus={onFocus} onChange={(rotation) => onChange({ rotation })} />
+        </label>
+        <label>
+          Ventos
+          <SpinSelect value={meta.winds} onFocus={onFocus} onChange={(winds) => onChange({ winds })} />
+        </label>
+      </div>
+    </details>
   );
 }

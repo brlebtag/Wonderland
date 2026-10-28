@@ -16,6 +16,8 @@ import { StoryHeader } from '../components/StoryHeader';
 import { CHARACTER_PALETTE, fromData } from '../map/mapDoc';
 import { MapView, NO_ETHNICITY_COLOR, parseColorMode, type RegionColorMode } from '../map/MapView';
 import { MapViewerModal } from '../map/MapViewerModal';
+import { MapOverlay } from '../map/MapOverlay';
+import { MeasureButton, RulerOverlay, useMeasureMode } from '../map/ruler';
 import { useStoredState } from '../storage';
 import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
 import { useMapNavigation } from '../map/useMapNavigation';
@@ -111,11 +113,13 @@ function MapTimeline({
   const fitZoom = useFitZoom(scrollRef, doc.width, doc.height);
   const zoom = zoomPref === 'fit' ? fitZoom : zoomPref;
   // aqui o mapa só é visualizado: arrastar com o botão esquerdo (ou do meio) move
+  const measure = useMeasureMode(doc);
   const { panning, containerProps } = useMapNavigation({
     scrollRef,
     zoom,
     setZoom: setZoomPref,
-    shouldPan: (e) => e.button === 0 || e.button === 1,
+    // medindo, o clique esquerdo marca a régua; o botão do meio continua movendo
+    shouldPan: (e) => e.button === 1 || (e.button === 0 && !measure.measuring),
   });
   const [colorMode, setColorMode] = useStoredState<RegionColorMode>('wonderland.regionColorMode', 'region', parseColorMode);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -226,6 +230,7 @@ function MapTimeline({
             </select>
           </label>
           <ZoomSelect value={zoomPref} onChange={setZoomPref} />
+          <MeasureButton measuring={measure.measuring} onToggle={measure.toggle} />
           <button className="ghost" onClick={() => setViewerOpen(true)}>
             ⛶ Ver mapa ampliado
           </button>
@@ -315,6 +320,7 @@ function MapTimeline({
       )}
 
       <div className="map-viewer">
+        <div className="map-frame">
         <div className="map-scroll" ref={scrollRef} {...containerProps}>
           <MapView
             map={doc}
@@ -322,7 +328,8 @@ function MapTimeline({
             zoom={zoom}
             regionColorMode={colorMode}
             ethnicities={ethnicities}
-            cursor={panning ? 'grabbing' : 'grab'}
+            cursor={measure.measuring ? 'crosshair' : panning ? 'grabbing' : 'grab'}
+            svgHandlers={measure.svgHandlers}
           >
             {/* locais com eventos; os do momento ficam destacados */}
             {located.map((e) => {
@@ -360,7 +367,10 @@ function MapTimeline({
                 </g>
               );
             })}
+            <RulerOverlay ruler={measure.ruler} map={doc} meta={doc.meta} zoom={zoom} />
           </MapView>
+        </div>
+        <MapOverlay map={doc} meta={doc.meta} zoom={zoom} />
         </div>
 
         <aside className="map-sidebar">
