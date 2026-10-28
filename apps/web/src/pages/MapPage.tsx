@@ -17,7 +17,7 @@ import { CHARACTER_PALETTE, fromData } from '../map/mapDoc';
 import { MapView, NO_ETHNICITY_COLOR, parseColorMode, type RegionColorMode } from '../map/MapView';
 import { MapViewerModal } from '../map/MapViewerModal';
 import { MapOverlay } from '../map/MapOverlay';
-import { MeasureButton, RulerOverlay, useMeasureMode } from '../map/ruler';
+import { MeasureButton, RulerOverlay, RulerReadout, useMeasureMode } from '../map/ruler';
 import { useStoredState } from '../storage';
 import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
 import { useMapNavigation } from '../map/useMapNavigation';
@@ -371,6 +371,7 @@ function MapTimeline({
           </MapView>
         </div>
         <MapOverlay map={doc} meta={doc.meta} zoom={zoom} />
+        <RulerReadout ruler={measure.ruler} map={doc} meta={doc.meta} />
         </div>
 
         <aside className="map-sidebar">

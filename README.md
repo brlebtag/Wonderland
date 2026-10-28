@@ -45,7 +45,9 @@ consistência da narrativa.
   40.075 × 20.004 km), o sentido de rotação do planeta e a direção dos ventos (editáveis no painel
   "🌍 Escala e planeta" do editor). No canto inferior direito do mapa ficam a **rosa dos ventos**, a
   **barra de escala** e a legenda de rotação/ventos. A **régua** (📏) mede a distância em linha reta
-  entre dois pontos, no editor, na aba Mapa e no mapa ampliado.
+  entre dois pontos, no editor, na aba Mapa e no mapa ampliado. Junto da distância aparece quanto tempo
+  levaria **a pé** (~4,5 km/h, 6 h/dia ≈ 27 km/dia) e **a cavalo** (~6,5 km/h, 7 h/dia ≈ 45 km/dia),
+  em ritmo leve a moderado.
 - **Local dos eventos** — cada evento pode apontar para um marcador, uma região, um território ou
   uma linha (rio, estrada, cordilheira) do mapa ("evento X, no ano Y, com W, K e Z, em P").
 - **Mapa no tempo** — régua do primeiro ao último evento (com play, velocidade e saltos de evento em

@@ -32,7 +32,7 @@ import {
 import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
 import { useMapNavigation } from '../map/useMapNavigation';
 import { MapOverlay } from '../map/MapOverlay';
-import { RulerOverlay, useRuler } from '../map/ruler';
+import { RulerOverlay, RulerReadout, useRuler } from '../map/ruler';
 import { ZoomSelect } from '../map/ZoomSelect';
 import { useStoredState } from '../storage';
 
@@ -724,6 +724,7 @@ function MapEditor({
           </MapView>
         </div>
         <MapOverlay map={doc} meta={doc.meta} zoom={zoom} />
+        {tool === 'ruler' && <RulerReadout ruler={ruler} map={doc} meta={doc.meta} />}
         </div>
 
         <aside className="map-sidebar">

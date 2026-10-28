@@ -4,7 +4,7 @@ import { useStoredState } from '../storage';
 import type { EditableMap } from './mapDoc';
 import { MapView } from './MapView';
 import { MapOverlay } from './MapOverlay';
-import { MeasureButton, RulerOverlay, useMeasureMode } from './ruler';
+import { MeasureButton, RulerOverlay, RulerReadout, useMeasureMode } from './ruler';
 import { parseZoom, useFitZoom, type ZoomPref } from './useFitZoom';
 import { useMapNavigation } from './useMapNavigation';
 import { ZoomSelect } from './ZoomSelect';
@@ -77,6 +77,7 @@ export function MapViewerModal({ map, ethnicities, title, onClose }: Props) {
           </MapView>
         </div>
         <MapOverlay map={map} meta={map.meta} zoom={zoom} />
+        <RulerReadout ruler={measure.ruler} map={map} meta={map.meta} />
       </div>
     </div>
   );

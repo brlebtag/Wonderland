@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type PointerEvent } from 'react';
 import { distanceKm, formatKm, type MapMeta, type Point } from '@wonderland/shared';
 import { CELL_PX } from './MapView';
+import { formatTravel, TRAVEL_MODES } from './travel';
 
 /** Ponto do mapa (em células) sob o ponteiro. */
 export function cellFromEvent(e: PointerEvent<SVGSVGElement>, map: { width: number; height: number }): Point {
@@ -111,5 +112,38 @@ export function MeasureButton({ measuring, onToggle }: { measuring: boolean; onT
     >
       📏 {measuring ? 'Medindo (clique para sair)' : 'Medir distância'}
     </button>
+  );
+}
+
+/**
+ * Quadro no canto superior esquerdo do mapa com a distância medida pela régua e quanto
+ * tempo levaria a pé e a cavalo (ritmo leve a moderado). Some quando não há medição.
+ */
+export function RulerReadout({
+  ruler,
+  map,
+  meta,
+}: {
+  ruler: Ruler;
+  map: { width: number; height: number };
+  meta: MapMeta;
+}) {
+  const a = ruler.points[0];
+  const b = ruler.points[1] ?? ruler.hover;
+  if (!a || !b) return null;
+  const km = distanceKm(map, meta, a, b);
+  return (
+    <div className="ruler-readout" aria-live="polite">
+      <div className="ruler-readout-distance">
+        📏 <strong>{formatKm(km)}</strong>
+        {ruler.points.length < 2 && <span className="muted small"> (clique para fixar)</span>}
+      </div>
+      {TRAVEL_MODES.map((m) => (
+        <div key={m.key} title={`${m.kmPerHour.toLocaleString('pt-BR')} km/h, ${m.hoursPerDay} h de viagem por dia`}>
+          {m.icon} {m.label}: <strong>{formatTravel(km, m)}</strong>
+        </div>
+      ))}
+      <div className="muted small">ritmo leve a moderado, com pausas</div>
+    </div>
   );
 }
