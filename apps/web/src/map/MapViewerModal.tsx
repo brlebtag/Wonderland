@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { listLocations } from '@wonderland/shared';
 import type { Ethnicity } from '../api';
 import { useStoredState } from '../storage';
-import type { EditableMap } from './mapDoc';
+import { toData, type EditableMap } from './mapDoc';
 import { MapView } from './MapView';
 import { MapOverlay } from './MapOverlay';
 import { MeasureButton, RulerOverlay, RulerReadout, useMeasureMode } from './ruler';
+import { MapSearchInput, SearchHighlight, useMapSearch } from './search';
 import { parseZoom, useFitZoom, type ZoomPref } from './useFitZoom';
 import { useMapNavigation } from './useMapNavigation';
 import { ZoomSelect } from './ZoomSelect';
@@ -27,6 +29,8 @@ export function MapViewerModal({ map, ethnicities, title, onClose }: Props) {
   const fitZoom = useFitZoom(scrollRef, map.width, map.height);
   const zoom = zoomPref === 'fit' ? fitZoom : zoomPref;
   const measure = useMeasureMode(map);
+  const search = useMapSearch(scrollRef, zoom);
+  const locations = useMemo(() => listLocations(toData(map)), [map]);
   const { panning, containerProps } = useMapNavigation({
     scrollRef,
     zoom,
@@ -56,6 +60,7 @@ export function MapViewerModal({ map, ethnicities, title, onClose }: Props) {
         <strong>{title}</strong>
         <span className="muted small">Roda do mouse: zoom · arrastar: mover · Esc: fechar</span>
         <span className="toolbar-spacer" />
+        <MapSearchInput locations={locations} onPick={search.focus} />
         <MeasureButton measuring={measure.measuring} onToggle={measure.toggle} />
         <ZoomSelect value={zoomPref} onChange={setZoomPref} />
         <button className="ghost" onClick={onClose} title="Fechar (Esc)" autoFocus>
@@ -73,6 +78,7 @@ export function MapViewerModal({ map, ethnicities, title, onClose }: Props) {
             cursor={measure.measuring ? 'crosshair' : panning ? 'grabbing' : 'grab'}
             svgHandlers={measure.svgHandlers}
           >
+            <SearchHighlight highlight={search.highlight} zoom={zoom} />
             <RulerOverlay ruler={measure.ruler} map={map} meta={map.meta} zoom={zoom} />
           </MapView>
         </div>

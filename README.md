@@ -48,6 +48,9 @@ consistência da narrativa.
   entre dois pontos, no editor, na aba Mapa e no mapa ampliado. Junto da distância aparece quanto tempo
   levaria **a pé** (~4,5 km/h, 6 h/dia ≈ 27 km/dia) e **a cavalo** (~6,5 km/h, 7 h/dia ≈ 45 km/dia),
   em ritmo leve a moderado.
+- **Busca no mapa** — na aba Mapa e no mapa ampliado, o campo "🔍 Procurar lugar no mapa" autocompleta
+  pelo nome (ou pelo tipo) de marcadores, regiões, territórios e linhas; ao escolher, o mapa rola até
+  o lugar e o destaca piscando por alguns segundos.
 - **Local dos eventos** — cada evento pode apontar para um marcador, uma região, um território ou
   uma linha (rio, estrada, cordilheira) do mapa ("evento X, no ano Y, com W, K e Z, em P").
 - **Mapa no tempo** — régua do primeiro ao último evento (com play, velocidade e saltos de evento em

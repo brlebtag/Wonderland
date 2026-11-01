@@ -688,3 +688,25 @@ button.active { background: var(--accent-soft); border-color: var(--accent); }
 }
 .ruler-readout-distance { font-size: 1rem; }
 .ruler-readout strong { color: #9c1f1f; }
+
+/* busca de lugares no mapa */
+.map-search { width: 240px; }
+.map-search .combo-list { min-width: 300px; }
+.search-highlight { pointer-events: none; }
+.search-highlight circle { fill: none; stroke: #ffcc00; }
+.search-highlight .dot { fill: #c0392b; stroke: none; }
+.search-highlight .ring {
+  stroke: #c0392b;
+  animation: search-blink 0.6s ease-in-out infinite alternate;
+}
+.search-highlight .ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: search-ripple 1.2s ease-out infinite;
+}
+.search-highlight .ripple.late { animation-delay: 0.6s; }
+@keyframes search-blink { from { opacity: 1; } to { opacity: 0.15; } }
+@keyframes search-ripple {
+  from { transform: scale(0.4); opacity: 1; }
+  to { transform: scale(2.2); opacity: 0; }
+}

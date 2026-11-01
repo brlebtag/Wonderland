@@ -18,6 +18,7 @@ import { MapView, NO_ETHNICITY_COLOR, parseColorMode, type RegionColorMode } fro
 import { MapViewerModal } from '../map/MapViewerModal';
 import { MapOverlay } from '../map/MapOverlay';
 import { MeasureButton, RulerOverlay, RulerReadout, useMeasureMode } from '../map/ruler';
+import { MapSearchInput, SearchHighlight, useMapSearch } from '../map/search';
 import { useStoredState } from '../storage';
 import { parseZoom, useFitZoom, type ZoomPref } from '../map/useFitZoom';
 import { useMapNavigation } from '../map/useMapNavigation';
@@ -107,7 +108,8 @@ function MapTimeline({
   ethnicities: Ethnicity[];
 }) {
   const doc = useMemo(() => fromData(data), [data]);
-  const locations = useMemo(() => new Map(listLocations(data).map((l) => [l.id, l])), [data]);
+  const locationList = useMemo(() => listLocations(data), [data]);
+  const locations = useMemo(() => new Map(locationList.map((l) => [l.id, l])), [locationList]);
   const [zoomPref, setZoomPref] = useStoredState<ZoomPref>('wonderland.mapZoomPref', 'fit', parseZoom);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fitZoom = useFitZoom(scrollRef, doc.width, doc.height);
@@ -121,6 +123,7 @@ function MapTimeline({
     // medindo, o clique esquerdo marca a régua; o botão do meio continua movendo
     shouldPan: (e) => e.button === 1 || (e.button === 0 && !measure.measuring),
   });
+  const search = useMapSearch(scrollRef, zoom);
   const [colorMode, setColorMode] = useStoredState<RegionColorMode>('wonderland.regionColorMode', 'region', parseColorMode);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [showTrails, setShowTrails] = useState(true);
@@ -222,6 +225,7 @@ function MapTimeline({
       <div className="page-header">
         <h2>Mapa</h2>
         <div className="actions">
+          <MapSearchInput locations={locationList} onPick={search.focus} />
           <label className="inline">
             Regiões por
             <select value={colorMode} onChange={(e) => setColorMode(e.target.value as RegionColorMode)}>
@@ -367,6 +371,7 @@ function MapTimeline({
                 </g>
               );
             })}
+            <SearchHighlight highlight={search.highlight} zoom={zoom} />
             <RulerOverlay ruler={measure.ruler} map={doc} meta={doc.meta} zoom={zoom} />
           </MapView>
         </div>
