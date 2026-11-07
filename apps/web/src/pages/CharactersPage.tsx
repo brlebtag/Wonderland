@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { characterFields } from '@wonderland/shared';
 import {
@@ -18,6 +19,7 @@ import {
 } from '../characterFilters';
 import { LifeBadge, lifeSummary } from '../components/LifeStatus';
 import { StoryHeader } from '../components/StoryHeader';
+import { TagInput, TagList, tagsInUse } from '../components/TagInput';
 import { useMapLocations } from '../mapLocations';
 
 /** Linha curta: etnia, sexo, idade calculada e local de nascimento. */
@@ -54,10 +56,22 @@ export function CharactersPage() {
 
   // Os filtros ficam na URL: voltar da ficha de um personagem mantém a lista filtrada.
   const [params, setParams] = useSearchParams();
-  const filters = Object.fromEntries(
-    Object.entries(NO_FILTERS).map(([k, v]) => [k, params.get(k) ?? v]),
-  ) as CharacterFilters;
-  const setFilter = (key: keyof CharacterFilters, value: string) =>
+  // tags: um parâmetro "tag" por tag escolhida
+  const filters = {
+    ...Object.fromEntries(Object.entries(NO_FILTERS).map(([k, v]) => [k, params.get(k) ?? v])),
+    tags: params.getAll('tag'),
+  } as CharacterFilters;
+  const setTagFilter = (tags: string[]) =>
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        next.delete('tag');
+        for (const t of tags) next.append('tag', t);
+        return next;
+      },
+      { replace: true },
+    );
+  const setFilter = (key: Exclude<keyof CharacterFilters, 'tags'>, value: string) =>
     setParams(
       (p) => {
         const next = new URLSearchParams(p);
@@ -69,6 +83,14 @@ export function CharactersPage() {
     );
   const all = characters.data ?? [];
   const shown = filterCharacters([...all], filters, presentDate);
+  const allTags = tagsInUse(all);
+  // filtros escondidos na sanfona (tudo menos a busca por nome) que estão em uso
+  const activeHidden =
+    (filters.tags.length > 0 ? 1 : 0) +
+    (['ethnicity', 'status', 'sex', 'place'] as const).filter((k) => filters[k] !== '').length +
+    (filters.ageMin !== '' || filters.ageMax !== '' ? 1 : 0);
+  // começa aberta se já há filtro escondido em uso (ex.: vindo da tela de tags)
+  const [showFilters, setShowFilters] = useState(activeHidden > 0);
   const sexOptions = characterFields.find((f) => f.key === 'sex')!.options ?? [];
   // só oferece os locais de nascimento que algum personagem usa
   const birthPlaces = [...new Set(all.flatMap((c) => (c.birthLocationId ? [c.birthLocationId] : [])))]
@@ -94,9 +116,14 @@ export function CharactersPage() {
 
       <div className="page-header">
         <h2>Personagens</h2>
-        <Link className="button" to={`/stories/${id}/characters/new`}>
-          + Novo personagem
-        </Link>
+        <div className="actions">
+          <Link className="button ghost" to={`/stories/${id}/characters/tags`}>
+            🏷 Tags
+          </Link>
+          <Link className="button" to={`/stories/${id}/characters/new`}>
+            + Novo personagem
+          </Link>
+        </div>
       </div>
 
       {all.length === 0 && !characters.isLoading && <p className="muted">Nenhum personagem cadastrado.</p>}
@@ -112,78 +139,106 @@ export function CharactersPage() {
               onChange={(e) => setFilter('q', e.target.value)}
             />
           </label>
-          <label>
-            Etnia
-            <select value={filters.ethnicity} onChange={(e) => setFilter('ethnicity', e.target.value)}>
-              <option value="">Todas</option>
-              {(ethnicities.data ?? []).map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name}
-                </option>
-              ))}
-              <option value="none">Sem etnia</option>
-            </select>
-          </label>
-          <label>
-            Situação
-            <select value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
-              <option value="">Todos</option>
-              <option value="alive">Vivos</option>
-              <option value="dead">Falecidos</option>
-            </select>
-          </label>
-          <label>
-            Sexo
-            <select value={filters.sex} onChange={(e) => setFilter('sex', e.target.value)}>
-              <option value="">Todos</option>
-              {sexOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-              <option value="none">Não informado</option>
-            </select>
-          </label>
-          <label>
-            Nasceu em
-            <select value={filters.place} onChange={(e) => setFilter('place', e.target.value)}>
-              <option value="">Qualquer lugar</option>
-              {birthPlaces.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.name}
-                </option>
-              ))}
-              <option value="none">Não informado</option>
-            </select>
-          </label>
-          <label>
-            Idade
-            <span className="age-range">
-              <input
-                type="number"
-                min={0}
-                placeholder="de"
-                value={filters.ageMin}
-                onChange={(e) => setFilter('ageMin', e.target.value)}
-              />
-              <input
-                type="number"
-                min={0}
-                placeholder="até"
-                value={filters.ageMax}
-                onChange={(e) => setFilter('ageMax', e.target.value)}
-              />
-            </span>
-          </label>
-          <label>
-            Ordenar por
-            <select value={filters.sort} onChange={(e) => setFilter('sort', e.target.value)}>
-              <option value="name">Nome</option>
-              <option value="age-asc">Idade (mais novos)</option>
-              <option value="age-desc">Idade (mais velhos)</option>
-              <option value="birth">Data de nascimento</option>
-            </select>
-          </label>
+          {/* linha própria, à direita, abaixo da busca */}
+          <div className="filters-toggle-row">
+            <button
+              type="button"
+              className="link"
+              aria-expanded={showFilters}
+              onClick={() => setShowFilters((v) => !v)}
+            >
+              {showFilters
+                ? 'Esconder filtros ▴'
+                : `Mostrar filtros${activeHidden > 0 ? ` (${activeHidden} ativo${activeHidden > 1 ? 's' : ''})` : ''} ▾`}
+            </button>
+          </div>
+          {showFilters && (
+            <div className="filters filters-more">
+            {allTags.length > 0 && (
+              <div className="field grow">
+                <span className="field-label">Tags (todas)</span>
+                <TagInput
+                  value={filters.tags}
+                  onChange={setTagFilter}
+                  suggestions={allTags}
+                  placeholder="Digite para filtrar por tags…"
+                />
+              </div>
+            )}
+            <label>
+              Etnia
+              <select value={filters.ethnicity} onChange={(e) => setFilter('ethnicity', e.target.value)}>
+                <option value="">Todas</option>
+                {(ethnicities.data ?? []).map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.name}
+                  </option>
+                ))}
+                <option value="none">Sem etnia</option>
+              </select>
+            </label>
+            <label>
+              Situação
+              <select value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
+                <option value="">Todos</option>
+                <option value="alive">Vivos</option>
+                <option value="dead">Falecidos</option>
+              </select>
+            </label>
+            <label>
+              Sexo
+              <select value={filters.sex} onChange={(e) => setFilter('sex', e.target.value)}>
+                <option value="">Todos</option>
+                {sexOptions.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+                <option value="none">Não informado</option>
+              </select>
+            </label>
+            <label>
+              Nasceu em
+              <select value={filters.place} onChange={(e) => setFilter('place', e.target.value)}>
+                <option value="">Qualquer lugar</option>
+                {birthPlaces.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name}
+                  </option>
+                ))}
+                <option value="none">Não informado</option>
+              </select>
+            </label>
+            <label>
+              Idade
+              <span className="age-range">
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="de"
+                  value={filters.ageMin}
+                  onChange={(e) => setFilter('ageMin', e.target.value)}
+                />
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="até"
+                  value={filters.ageMax}
+                  onChange={(e) => setFilter('ageMax', e.target.value)}
+                />
+              </span>
+            </label>
+            <label>
+              Ordenar por
+              <select value={filters.sort} onChange={(e) => setFilter('sort', e.target.value)}>
+                <option value="name">Nome</option>
+                <option value="age-asc">Idade (mais novos)</option>
+                <option value="age-desc">Idade (mais velhos)</option>
+                <option value="birth">Data de nascimento</option>
+              </select>
+            </label>
+            </div>
+          )}
           <div className="filters-footer">
             <span className="muted">
               {shown.length === all.length
@@ -210,7 +265,8 @@ export function CharactersPage() {
               <Link to={`/stories/${id}/characters/${c.id}`} className="story-title">
                 {c.name}
               </Link>
-              {c.nickname && <span className="muted"> “{c.nickname}”</span>} <LifeBadge character={c} />
+              {c.nickname && <span className="muted"> “{c.nickname}”</span>} <LifeBadge character={c} />{' '}
+              <TagList tags={c.tags} />
               {summaryOf(c) && <div className="muted">{summaryOf(c)}</div>}
             </div>
             <div className="actions">

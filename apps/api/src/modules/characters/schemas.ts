@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import { characterFields, cleanAttributes, type CharacterField } from '@wonderland/shared';
+import {
+  characterFields,
+  cleanAttributes,
+  cleanTags,
+  MAX_TAG_LENGTH,
+  MAX_TAGS,
+  type CharacterField,
+} from '@wonderland/shared';
 import { location } from '../events/schemas';
 
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use o formato YYYY-MM-DD');
@@ -37,6 +44,9 @@ export const attributesSchema = z
 const name = z.string().trim().min(1).max(200);
 const nickname = z.string().trim().max(200);
 
+// Repetidas (sem diferenciar maiúsculas/acentos) e vazias são descartadas.
+const tags = z.array(z.string().max(MAX_TAG_LENGTH * 2)).max(MAX_TAGS * 2).transform(cleanTags).pipe(z.array(z.string()).max(MAX_TAGS, `No máximo ${MAX_TAGS} tags`));
+
 const ethnicityId = z.string().min(1).nullable();
 // Local de nascimento: um elemento do mapa da história (null = não informado).
 const birthLocation = location;
@@ -47,6 +57,7 @@ export const characterCreate = z.object({
   attributes: attributesSchema.default({}),
   ethnicityId: ethnicityId.default(null),
   birthLocation: birthLocation.default(null),
+  tags: tags.default([]),
 });
 export const characterUpdate = z.object({
   name: name.optional(),
@@ -54,6 +65,7 @@ export const characterUpdate = z.object({
   attributes: attributesSchema.optional(),
   ethnicityId: ethnicityId.optional(),
   birthLocation: birthLocation.optional(),
+  tags: tags.optional(),
 });
 
 export type CharacterCreate = z.infer<typeof characterCreate>;

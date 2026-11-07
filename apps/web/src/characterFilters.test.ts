@@ -13,13 +13,14 @@ const mk = (name: string, extra: Partial<Character> = {}, attributes: Character[
   ethnicityId: null,
   birthLocationKind: null,
   birthLocationId: null,
+  tags: [],
   createdAt: '',
   updatedAt: '',
   ...extra,
 });
 
-const ana = mk('Ana', { ethnicityId: 'reino', birthLocationId: 'capital' }, { sex: 'female', birthDate: '1980-01-01' });
-const bento = mk('Bento', { ethnicityId: 'tribo', nickname: 'Lobo' }, { sex: 'male', birthDate: '1950-01-01', deathDate: '1990-01-01' });
+const ana = mk('Ana', { ethnicityId: 'reino', birthLocationId: 'capital', tags: ['Protagonista', 'nobre'] }, { sex: 'female', birthDate: '1980-01-01' });
+const bento = mk('Bento', { ethnicityId: 'tribo', nickname: 'Lobo', tags: ['antagonista', 'nobre'] }, { sex: 'male', birthDate: '1950-01-01', deathDate: '1990-01-01' });
 const cecilia = mk('Cecília', {}, { birthDate: '1995-03-01' });
 const davi = mk('Davi');
 const all = [davi, cecilia, bento, ana];
@@ -72,5 +73,12 @@ describe('filterCharacters', () => {
     expect(names({ sort: 'age-asc' })).toEqual(['Cecília', 'Ana', 'Bento', 'Davi']);
     expect(names({ sort: 'age-desc' })).toEqual(['Bento', 'Ana', 'Cecília', 'Davi']);
     expect(names({ sort: 'birth' })).toEqual(['Bento', 'Ana', 'Cecília', 'Davi']);
+  });
+
+  it('tags: precisa ter todas, sem diferenciar maiúsculas/acentos', () => {
+    expect(names({ tags: ['nobre'] })).toEqual(['Ana', 'Bento']);
+    expect(names({ tags: ['NOBRE', 'protagonista'] })).toEqual(['Ana']);
+    expect(names({ tags: ['coadjuvante'] })).toEqual([]);
+    expect(hasFilters({ ...NO_FILTERS, tags: ['nobre'] })).toBe(true);
   });
 });

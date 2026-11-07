@@ -12,6 +12,7 @@ import type { CharacterInput, CharacterRef, Ethnicity, RelationInput } from '../
 import { ChipSelect } from './ChipSelect';
 import { FamilyEditor } from './FamilyEditor';
 import { LocationPicker } from './LocationPicker';
+import { TagInput } from './TagInput';
 
 type Draft = Record<string, unknown>;
 
@@ -25,6 +26,8 @@ type Props = {
   /** Lugares do mapa (para o local de nascimento); null quando a história não tem mapa. */
   locations: MapLocation[] | null;
   mapHref: string;
+  /** Tags oferecidas ao digitar (sugeridas + as já usadas na história). */
+  tagSuggestions: string[];
   submitLabel: string;
   onSubmit: (input: CharacterInput, relations: RelationInput[]) => Promise<unknown>;
   onCancel: () => void;
@@ -95,6 +98,7 @@ export function CharacterForm({
   initialRelations,
   locations,
   mapHref,
+  tagSuggestions,
   submitLabel,
   onSubmit,
   onCancel,
@@ -102,6 +106,7 @@ export function CharacterForm({
   const [name, setName] = useState(initial?.name ?? '');
   const [nickname, setNickname] = useState(initial?.nickname ?? '');
   const [ethnicityId, setEthnicityId] = useState(initial?.ethnicityId ?? '');
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const [attrs, setAttrs] = useState<Draft>(initial?.attributes ?? {});
   const [relations, setRelations] = useState<RelationInput[]>(initialRelations ?? []);
   // "kind:id" ou '' (não informado)
@@ -126,6 +131,7 @@ export function CharacterForm({
           ? { kind: birthLocation.split(':')[0] as LocationKind, id: birthLocation.split(':')[1] }
           : null,
         attributes: cleanAttributes(attrs) as CharacterAttributes,
+        tags,
       }, relations.filter((r) => r.otherId));
     } catch (err) {
       setError((err as Error).message);
@@ -171,6 +177,17 @@ export function CharacterForm({
             </span>
           )}
         </div>
+      </div>
+
+      <div className="field">
+        <span className="field-label">Tags</span>
+        <TagInput
+          value={tags}
+          onChange={setTags}
+          suggestions={tagSuggestions}
+          allowCreate
+          placeholder="Ex.: protagonista, antagonista… (digite e Enter para criar)"
+        />
       </div>
 
       <details className="field-group" open={relations.length > 0}>

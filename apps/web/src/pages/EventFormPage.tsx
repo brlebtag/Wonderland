@@ -71,6 +71,7 @@ export function EventFormPage() {
               attributes: {},
               ethnicityId: null,
               birthLocation: null,
+              tags: [],
             })
           }
           submitLabel={isNew ? 'Adicionar' : 'Salvar'}

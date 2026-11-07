@@ -1,3 +1,4 @@
+import { tagKey } from '@wonderland/shared';
 import type { Character } from './api';
 import { normalize } from './text';
 import { ageAt } from './timelineLayout';
@@ -12,6 +13,8 @@ export type CharacterFilters = {
   ageMin: string;
   ageMax: string;
   sort: 'name' | 'age-asc' | 'age-desc' | 'birth';
+  /** O personagem precisa ter todas estas tags. */
+  tags: string[];
 };
 
 export const NO_FILTERS: CharacterFilters = {
@@ -23,10 +26,12 @@ export const NO_FILTERS: CharacterFilters = {
   ageMin: '',
   ageMax: '',
   sort: 'name',
+  tags: [],
 };
 
 export const hasFilters = (f: CharacterFilters) =>
-  (Object.keys(NO_FILTERS) as (keyof CharacterFilters)[]).some((k) => k !== 'sort' && f[k] !== '');
+  f.tags.length > 0 ||
+  (Object.keys(NO_FILTERS) as (keyof CharacterFilters)[]).some((k) => k !== 'sort' && k !== 'tags' && f[k] !== '');
 
 const attr = (c: Character, key: string) => c.attributes[key] as string | undefined;
 
@@ -50,10 +55,15 @@ export function filterCharacters(characters: Character[], f: CharacterFilters, p
   const q = normalize(f.q);
   const min = f.ageMin === '' ? undefined : Number(f.ageMin);
   const max = f.ageMax === '' ? undefined : Number(f.ageMax);
+  const wanted = f.tags.map(tagKey);
 
   const list = characters.filter((c) => {
     if (q && !normalize(`${c.name} ${c.nickname}`).includes(q)) return false;
     if (!matches(f.ethnicity, c.ethnicityId)) return false;
+    if (wanted.length) {
+      const has = new Set(c.tags.map(tagKey));
+      if (!wanted.every((t) => has.has(t))) return false;
+    }
     if (!matches(f.sex, attr(c, 'sex'))) return false;
     if (!matches(f.place, c.birthLocationId)) return false;
     const dead = !!attr(c, 'deathDate');

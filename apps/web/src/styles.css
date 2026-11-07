@@ -710,3 +710,52 @@ button.active { background: var(--accent-soft); border-color: var(--accent); }
   from { transform: scale(0.4); opacity: 1; }
   to { transform: scale(2.2); opacity: 0; }
 }
+
+/* tags dos personagens */
+.tags { display: inline-flex; flex-wrap: wrap; gap: 4px; vertical-align: middle; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tag-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 38px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  cursor: text;
+}
+.tag-input:focus-within { border-color: var(--accent); }
+.tag-input input { flex: 1; min-width: 120px; border: 0; outline: 0; padding: 4px; background: transparent; }
+.tag-remove {
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 0.7rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.tag-remove:hover { opacity: 1; }
+
+/* filtros escondidos (sanfona) da lista de personagens */
+.filters-toggle-row { flex-basis: 100%; display: flex; justify-content: flex-end; margin-top: -4px; }
+.filters-more { flex-basis: 100%; }
+
+/* tela de tags */
+.tag-create { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tag-create input { flex: 1; min-width: 180px; max-width: 360px; }
+.card .chips { align-items: center; margin-top: 10px; }

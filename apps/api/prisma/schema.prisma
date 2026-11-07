@@ -17,6 +17,7 @@ model Story {
   events      Event[]
   characters  Character[]
   ethnicities Ethnicity[]
+  tags        Tag[]
   map         StoryMap?
 
   @@index([deletedAt])
@@ -59,6 +60,7 @@ model Character {
   // parentescos: "related é <role> de character" (um registro por par)
   relationsFrom CharacterRelation[] @relation("relationFrom")
   relationsTo   CharacterRelation[] @relation("relationTo")
+  tagLinks      CharacterTag[]
 
   @@index([storyId])
 }
@@ -104,4 +106,28 @@ model StoryMap {
   data      Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Tag de personagem (protagonista, mentor...). Apagar uma tag apaga os vínculos, nunca os personagens.
+/// Nomes não se repetem na história (sem diferenciar maiúsculas/acentos: regra em packages/shared/src/characterTags.ts).
+model Tag {
+  id         String         @id @default(cuid())
+  storyId    String
+  story      Story          @relation(fields: [storyId], references: [id])
+  name       String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  characters CharacterTag[]
+
+  @@unique([storyId, name])
+}
+
+model CharacterTag {
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  tagId       String
+  tag         Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([characterId, tagId])
+  @@index([tagId])
 }

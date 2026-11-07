@@ -3,6 +3,7 @@ import { ethnicityService } from '../ethnicities/service';
 import { eventRepository } from '../events/repository';
 import { mapService } from '../map/service';
 import { storyService } from '../stories/service';
+import { tagService } from '../tags/service';
 import { listRelations, replaceRelations, type RelationInput } from './relations';
 import { characterRepository as repo } from './repository';
 import type { CharacterCreate, CharacterUpdate } from './schemas';
@@ -23,13 +24,16 @@ export const characterService = {
     await storyService.get(storyId);
     await ethnicityService.assertInStory(storyId, input.ethnicityId);
     await mapService.assertLocation(storyId, input.birthLocation);
-    return repo.create(storyId, input);
+    const { tags, ...data } = input;
+    return repo.create(storyId, { ...data, tagIds: await tagService.resolve(storyId, tags) });
   },
   async update(id: string, input: CharacterUpdate) {
     const character = await get(id);
     await ethnicityService.assertInStory(character.storyId, input.ethnicityId);
     await mapService.assertLocation(character.storyId, input.birthLocation);
-    return repo.update(id, input);
+    const { tags, ...data } = input;
+    const tagIds = tags && (await tagService.resolve(character.storyId, tags));
+    return repo.update(id, { ...data, tagIds });
   },
   // Os vínculos com eventos ficam; o personagem só deixa de aparecer neles.
   async remove(id: string) {

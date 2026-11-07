@@ -23,7 +23,7 @@ export const storyRepository = {
       include: { _count: { select: { events: true, characters: true, ethnicities: true } } },
     }),
   /**
-   * Remove de vez a história com eventos, personagens e etnias
+   * Remove de vez a história com eventos, personagens, etnias e tags
    * (os vínculos e o mapa caem em cascata).
    */
   purge: (id: string) =>
@@ -31,6 +31,7 @@ export const storyRepository = {
       prisma.event.deleteMany({ where: { storyId: id } }),
       prisma.character.deleteMany({ where: { storyId: id } }),
       prisma.ethnicity.deleteMany({ where: { storyId: id } }),
+      prisma.tag.deleteMany({ where: { storyId: id } }),
       prisma.story.delete({ where: { id } }),
     ]),
 };

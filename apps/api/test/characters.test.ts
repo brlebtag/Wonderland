@@ -82,6 +82,27 @@ describe('characters', () => {
     expect((await app.inject({ url: `/api/characters/${c.id}` })).statusCode).toBe(404);
     expect((await app.inject({ url: `/api/stories/${story.id}/characters` })).json()).toEqual([]);
   });
+
+  it('tags: limpa, remove repetidas e substitui ao editar', async () => {
+    const story = await createStory();
+    const c = await createCharacter(story.id, {
+      name: 'Rainha',
+      tags: ['  Antagonista ', 'antagonista', 'Família  real', '', 'Antágonista'],
+    });
+    expect(c.tags).toEqual(['Antagonista', 'Família real']);
+    expect((await createCharacter(story.id, { name: 'Sem tags' })).tags).toEqual([]);
+
+    const patched = await app.inject({
+      method: 'PATCH',
+      url: `/api/characters/${c.id}`,
+      payload: { tags: ['protagonista'] },
+    });
+    expect(patched.json().tags).toEqual(['protagonista']);
+
+    const tooMany = Array.from({ length: 31 }, (_, i) => `tag ${i}`);
+    const res = await app.inject({ method: 'PATCH', url: `/api/characters/${c.id}`, payload: { tags: tooMany } });
+    expect(res.statusCode).toBe(400);
+  });
 });
 
 describe('vínculo personagem ↔ evento', () => {

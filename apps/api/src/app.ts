@@ -7,6 +7,7 @@ import { characterRoutes } from './modules/characters/routes';
 import { trashRoutes } from './modules/trash/routes';
 import { ethnicityRoutes } from './modules/ethnicities/routes';
 import { mapRoutes } from './modules/map/routes';
+import { tagRoutes } from './modules/tags/routes';
 
 export function buildApp() {
   // O mapa é salvo como um documento só; 20 MB dá folga para mapas grandes.
@@ -35,6 +36,7 @@ export function buildApp() {
   app.register(trashRoutes, { prefix: '/api' });
   app.register(ethnicityRoutes, { prefix: '/api' });
   app.register(mapRoutes, { prefix: '/api' });
+  app.register(tagRoutes, { prefix: '/api' });
 
   return app;
 }

@@ -14,6 +14,7 @@ import { StoriesPage } from './pages/StoriesPage';
 import { StoryFormPage } from './pages/StoryFormPage';
 import { StoryPage } from './pages/StoryPage';
 import { StoryTrashPage } from './pages/StoryTrashPage';
+import { TagsPage } from './pages/TagsPage';
 import { TrashPage } from './pages/TrashPage';
 import './styles.css';
 
@@ -39,6 +40,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/stories/:id/map" element={<MapPage />} />
           <Route path="/stories/:id/map/edit" element={<MapEditorPage />} />
           <Route path="/stories/:id/characters/new" element={<CharacterFormPage />} />
+          <Route path="/stories/:id/characters/tags" element={<TagsPage />} />
           <Route path="/stories/:id/characters/:characterId" element={<CharacterPage />} />
           <Route path="/stories/:id/characters/:characterId/edit" element={<CharacterFormPage />} />
         </Routes>

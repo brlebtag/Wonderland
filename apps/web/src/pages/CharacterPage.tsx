@@ -11,6 +11,7 @@ import {
 import { filledGroups, formatAttribute } from '../characterDisplay';
 import { EventsSection } from '../components/EventsSection';
 import { LifeBadge, lifeOf, lifeSummary } from '../components/LifeStatus';
+import { TagList } from '../components/TagInput';
 import { useMapLocations } from '../mapLocations';
 import { lifeMoment } from '../timelineLayout';
 
@@ -59,6 +60,11 @@ export function CharacterPage() {
               <span className="swatch" style={{ background: ethnicity.color }} />
               {ethnicity.name}
               {ethnicity.kind && <span className="muted"> · {ethnicity.kind}</span>}
+            </p>
+          )}
+          {c.tags.length > 0 && (
+            <p>
+              <TagList tags={c.tags} />
             </p>
           )}
           <p className="life-line">

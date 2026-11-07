@@ -33,6 +33,18 @@ export type Character = {
   ethnicityId: string | null;
   birthLocationKind: LocationKind | null;
   birthLocationId: string | null;
+  /** Nomes das tags, em ordem alfabética. */
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Tag = {
+  id: string;
+  storyId: string;
+  name: string;
+  /** Personagens (fora da lixeira) com a tag. */
+  characterCount: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -62,6 +74,7 @@ export type CharacterInput = {
   attributes: CharacterAttributes;
   ethnicityId: string | null;
   birthLocation: EventLocation | null;
+  tags: string[];
 };
 /** Parentesco visto pela ficha de um personagem: "other é role deste personagem". */
 export type FamilyRelation = { role: string; other: { id: string; name: string; sex: string | null } };
@@ -93,6 +106,7 @@ const keys = {
   storyTrash: (storyId: string) => ['stories', storyId, 'trash'] as const,
   ethnicities: (storyId: string) => ['stories', storyId, 'ethnicities'] as const,
   ethnicity: (id: string) => ['ethnicities', id] as const,
+  tags: (storyId: string) => ['stories', storyId, 'tags'] as const,
   map: (storyId: string) => ['stories', storyId, 'map'] as const,
   trash: ['trash'] as const,
 };
@@ -354,6 +368,36 @@ export const useUpdateEthnicity = (storyId: string, id: string) =>
   );
 export const useDeleteEthnicity = (storyId: string) =>
   useEthnicityMutation(storyId, (id: string) => request(`/ethnicities/${id}`, 'DELETE'));
+
+// ---------- tags ----------
+
+export const useTags = (storyId: string) =>
+  useQuery({
+    queryKey: keys.tags(storyId),
+    queryFn: () => request<Tag[]>(`/stories/${storyId}/tags`),
+  });
+
+/** Renomear/apagar uma tag muda os personagens: recarrega a história e os personagens. */
+function useTagMutation<T>(storyId: string, action: (input: T) => Promise<unknown>) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: action,
+    onSuccess: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: keys.story(storyId) }),
+        qc.invalidateQueries({ queryKey: keys.allCharacters }),
+      ]),
+  });
+}
+
+export const useCreateTag = (storyId: string) =>
+  useTagMutation(storyId, (name: string) => request<Tag>(`/stories/${storyId}/tags`, 'POST', { name }));
+export const useRenameTag = (storyId: string) =>
+  useTagMutation(storyId, ({ id, name }: { id: string; name: string }) =>
+    request<Tag>(`/tags/${id}`, 'PATCH', { name }),
+  );
+export const useDeleteTag = (storyId: string) =>
+  useTagMutation(storyId, (id: string) => request(`/tags/${id}`, 'DELETE'));
 
 // ---------- mapa ----------
 

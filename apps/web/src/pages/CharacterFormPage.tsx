@@ -6,8 +6,10 @@ import {
   useCreateCharacter,
   useEthnicities,
   useSaveRelations,
+  useTags,
   useUpdateCharacter,
 } from '../api';
+import { cleanTags, SUGGESTED_TAGS } from '@wonderland/shared';
 import { CharacterForm } from '../components/CharacterForm';
 import { useMapLocations } from '../mapLocations';
 import { useGoBack } from '../navigation';
@@ -20,6 +22,7 @@ export function CharacterFormPage() {
   const ethnicities = useEthnicities(storyId);
   const characters = useCharacters(storyId);
   const relations = useCharacterRelations(characterId);
+  const tags = useTags(storyId);
   const saveRelations = useSaveRelations();
   const map = useMapLocations(storyId);
   const createCharacter = useCreateCharacter(storyId);
@@ -53,6 +56,7 @@ export function CharacterFormPage() {
               nickname: c.nickname,
               attributes: c.attributes,
               ethnicityId: c.ethnicityId,
+              tags: c.tags,
               birthLocation:
                 c.birthLocationKind && c.birthLocationId
                   ? { kind: c.birthLocationKind, id: c.birthLocationId }
@@ -62,6 +66,7 @@ export function CharacterFormPage() {
           ethnicities={ethnicities.data ?? []}
           locations={map.locations}
           mapHref={`/stories/${storyId}/map/edit`}
+          tagSuggestions={cleanTags([...SUGGESTED_TAGS, ...(tags.data ?? []).map((t) => t.name)])}
           relatives={(characters.data ?? []).filter((x) => x.id !== characterId)}
           initialRelations={relations.data?.map((r) => ({ otherId: r.other.id, role: r.role }))}
           submitLabel={isNew ? 'Criar' : 'Salvar'}

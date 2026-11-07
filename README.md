@@ -28,6 +28,14 @@ consistência da narrativa.
     primo/prima, cônjuge, padrasto/madrasta, sogro/sogra, cunhado/cunhada, padrinho/madrinha...
     Cada vínculo aparece nas duas fichas, com o papel invertido (pai ↔ filha) e no gênero do parente.
   - Campos de **objetivos, desejos e trivialidades**.
+  - **Tags** (tabela própria por história, ligada aos personagens): protagonista, antagonista,
+    deuteragonista, coadjuvante são sugeridas; qualquer outra pode ser criada na ficha, digitando e
+    apertando Enter ou vírgula. Maiúsculas e acentos não contam para repetição. A tela **🏷 Tags**
+    (botão na lista de personagens) cria, renomeia e apaga tags — apagar uma tag só a tira dos
+    personagens, nunca apaga o personagem.
+  - **Filtros** da lista: a busca por nome/apelido fica sempre à vista; os demais (tags, etnia,
+    situação, sexo, local de nascimento, idade, ordenação) ficam em "Mostrar filtros". O filtro de
+    tags autocompleta com as tags em uso e mostra só quem tem **todas** as tags escolhidas.
 
 - **Etnias** — nações, reinos, povos, tribos... com tipo, cor e descrição. Cada personagem pode ser
   vinculado a uma etnia; no mapa, regiões e territórios também.
