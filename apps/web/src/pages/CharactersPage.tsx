@@ -268,6 +268,7 @@ export function CharactersPage() {
               {c.nickname && <span className="muted"> “{c.nickname}”</span>} <LifeBadge character={c} />{' '}
               <TagList tags={c.tags} />
               {summaryOf(c) && <div className="muted">{summaryOf(c)}</div>}
+              {c.description && <div className="character-desc">{c.description}</div>}
             </div>
             <div className="actions">
               <Link className="button ghost" to={`/stories/${id}/characters/${c.id}/edit`}>

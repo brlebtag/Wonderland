@@ -759,3 +759,14 @@ button.active { background: var(--accent-soft); border-color: var(--accent); }
 .tag-create { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .tag-create input { flex: 1; min-width: 180px; max-width: 360px; }
 .card .chips { align-items: center; margin-top: 10px; }
+
+/* descrição curta do personagem na lista (até duas linhas) */
+.character-desc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 2px;
+  white-space: pre-line;
+}
+.character-description { white-space: pre-line; max-width: 70ch; }

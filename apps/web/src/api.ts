@@ -29,6 +29,7 @@ export type Character = {
   storyId: string;
   name: string;
   nickname: string;
+  description: string;
   attributes: CharacterAttributes;
   ethnicityId: string | null;
   birthLocationKind: LocationKind | null;
@@ -71,6 +72,7 @@ export type EventInput = {
 export type CharacterInput = {
   name: string;
   nickname: string;
+  description: string;
   attributes: CharacterAttributes;
   ethnicityId: string | null;
   birthLocation: EventLocation | null;

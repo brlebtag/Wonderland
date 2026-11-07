@@ -9,6 +9,7 @@ const mk = (name: string, extra: Partial<Character> = {}, attributes: Character[
   storyId: 's',
   name,
   nickname: '',
+  description: '',
   attributes,
   ethnicityId: null,
   birthLocationKind: null,

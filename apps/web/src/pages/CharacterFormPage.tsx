@@ -54,6 +54,7 @@ export function CharacterFormPage() {
             c && {
               name: c.name,
               nickname: c.nickname,
+              description: c.description,
               attributes: c.attributes,
               ethnicityId: c.ethnicityId,
               tags: c.tags,

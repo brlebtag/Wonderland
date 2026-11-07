@@ -46,6 +46,8 @@ model Character {
   story       Story      @relation(fields: [storyId], references: [id])
   name        String
   nickname    String     @default("")
+  // Texto livre curto, útil para quem não tem a ficha preenchida.
+  description String     @default("")
   // Ficha completa; os campos válidos estão em packages/shared/src/characterFields.ts.
   attributes  Json
   ethnicityId String?

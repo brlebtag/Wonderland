@@ -43,6 +43,7 @@ export const attributesSchema = z
 
 const name = z.string().trim().min(1).max(200);
 const nickname = z.string().trim().max(200);
+const description = z.string().trim().max(5000);
 
 // Repetidas (sem diferenciar maiúsculas/acentos) e vazias são descartadas.
 const tags = z.array(z.string().max(MAX_TAG_LENGTH * 2)).max(MAX_TAGS * 2).transform(cleanTags).pipe(z.array(z.string()).max(MAX_TAGS, `No máximo ${MAX_TAGS} tags`));
@@ -54,6 +55,7 @@ const birthLocation = location;
 export const characterCreate = z.object({
   name,
   nickname: nickname.default(''),
+  description: description.default(''),
   attributes: attributesSchema.default({}),
   ethnicityId: ethnicityId.default(null),
   birthLocation: birthLocation.default(null),
@@ -62,6 +64,7 @@ export const characterCreate = z.object({
 export const characterUpdate = z.object({
   name: name.optional(),
   nickname: nickname.optional(),
+  description: description.optional(),
   attributes: attributesSchema.optional(),
   ethnicityId: ethnicityId.optional(),
   birthLocation: birthLocation.optional(),

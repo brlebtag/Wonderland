@@ -105,6 +105,7 @@ export function CharacterForm({
 }: Props) {
   const [name, setName] = useState(initial?.name ?? '');
   const [nickname, setNickname] = useState(initial?.nickname ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
   const [ethnicityId, setEthnicityId] = useState(initial?.ethnicityId ?? '');
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const [attrs, setAttrs] = useState<Draft>(initial?.attributes ?? {});
@@ -126,6 +127,7 @@ export function CharacterForm({
       await onSubmit({
         name,
         nickname,
+        description,
         ethnicityId: ethnicityId || null,
         birthLocation: birthLocation
           ? { kind: birthLocation.split(':')[0] as LocationKind, id: birthLocation.split(':')[1] }
@@ -167,6 +169,17 @@ export function CharacterForm({
             )}
           </select>
         </label>
+      </div>
+      <label>
+        Descrição
+        <textarea
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="O essencial sobre o personagem, para quem não tem a ficha completa…"
+        />
+      </label>
+      <div className="row">
         <div className="field grow">
           <span className="field-label">Local de nascimento</span>
           {locations ? (

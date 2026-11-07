@@ -62,6 +62,7 @@ export function CharacterPage() {
               {ethnicity.kind && <span className="muted"> · {ethnicity.kind}</span>}
             </p>
           )}
+          {c.description && <p className="event-desc character-description">{c.description}</p>}
           {c.tags.length > 0 && (
             <p>
               <TagList tags={c.tags} />

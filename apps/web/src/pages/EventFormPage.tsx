@@ -68,6 +68,7 @@ export function EventFormPage() {
             createCharacter.mutateAsync({
               name,
               nickname: '',
+              description: '',
               attributes: {},
               ethnicityId: null,
               birthLocation: null,

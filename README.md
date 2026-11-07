@@ -16,6 +16,8 @@ consistência da narrativa.
     "(37 anos atrás)" na lista e no hover.
 - **Personagens** — ficha completa com mais de 100 campos (dados básicos, aparência, saúde,
   personalidade, passado, relacionamentos, trabalho, habilidades, gostos, sobrenatural).
+  - **Descrição** curta (abaixo do nome), para guardar o essencial de quem não tem a ficha preenchida;
+    aparece na lista (até duas linhas) e na página do personagem.
   - Vinculados a eventos (muitos-para-muitos); a página do personagem mostra a timeline só dos eventos dele.
   - Personagens podem ser criados direto do formulário de evento, só com o nome.
   - A **idade é calculada** pela data de nascimento até os "dias atuais" da história (não há campo

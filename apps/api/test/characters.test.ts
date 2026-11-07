@@ -38,6 +38,7 @@ describe('characters', () => {
       },
     });
     expect(character).toMatchObject({ name: 'Alice', nickname: 'Ali', deletedAt: null });
+    expect(character.description).toBe('');
     expect(character.attributes).toEqual({
       height: 120,
       sex: 'female',
@@ -70,9 +71,13 @@ describe('characters', () => {
     const patched = await app.inject({
       method: 'PATCH',
       url: `/api/characters/${c.id}`,
-      payload: { attributes: { hairColor: 'ruivo' } },
+      payload: { attributes: { hairColor: 'ruivo' }, description: '  Guarda o chá das seis.  ' },
     });
-    expect(patched.json()).toMatchObject({ name: 'Chapeleiro', attributes: { hairColor: 'ruivo' } });
+    expect(patched.json()).toMatchObject({
+      name: 'Chapeleiro',
+      description: 'Guarda o chá das seis.',
+      attributes: { hairColor: 'ruivo' },
+    });
     expect(patched.json().attributes.height).toBeUndefined();
 
     const list = (await app.inject({ url: `/api/stories/${story.id}/characters` })).json();
