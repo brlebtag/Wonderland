@@ -265,8 +265,12 @@ export function CharactersPage() {
               <Link to={`/stories/${id}/characters/${c.id}`} className="story-title">
                 {c.name}
               </Link>
-              {c.nickname && <span className="muted"> “{c.nickname}”</span>} <LifeBadge character={c} />{' '}
-              <TagList tags={c.tags} />
+              {c.nickname && <span className="muted"> “{c.nickname}”</span>} <LifeBadge character={c} />
+              {c.tags.length > 0 && (
+                <div className="character-tags">
+                  <TagList tags={c.tags} />
+                </div>
+              )}
               {summaryOf(c) && <div className="muted">{summaryOf(c)}</div>}
               {c.description && <div className="character-desc">{c.description}</div>}
             </div>

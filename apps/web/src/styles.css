@@ -770,3 +770,4 @@ button.active { background: var(--accent-soft); border-color: var(--accent); }
   white-space: pre-line;
 }
 .character-description { white-space: pre-line; max-width: 70ch; }
+.character-tags { margin: 3px 0 2px; }
